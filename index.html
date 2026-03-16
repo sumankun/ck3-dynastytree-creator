@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CK3 Tree Forge</title>
+  <style>
+    :root {
+      --bg1: #090612;
+      --bg2: #0b1020;
+      --bg3: #141038;
+      --panel1: rgba(19, 15, 37, 0.95);
+      --panel2: rgba(8, 8, 18, 0.95);
+      --text: #f5e8cb;
+      --muted: #9f92d6;
+      --gold: #f0ca88;
+      --green: #71f0a5;
+      --marriage: #e2bc63;
+      --border: rgba(135, 103, 69, 0.65);
+      --input: rgba(12, 11, 27, 0.85);
+      --danger: #ffbcb3;
+      --danger-bg: rgba(49, 19, 24, 0.7);
+      --warn: #f0ddb0;
+      --shadow: 0 24px 60px rgba(0,0,0,.45);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(121,57,255,.18), transparent 24%),
+        radial-gradient(circle at 80% 16%, rgba(69,114,255,.18), transparent 26%),
+        radial-gradient(circle at 35% 85%, rgba(149,57,107,.12), transparent 22%),
+        linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 34%, var(--bg3) 66%, var(--bg1) 100%);
+      overflow: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,.15) 54%, rgba(0,0,0,.56) 100%);
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .07;
+      background-image:
+        linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px);
+      background-size: 56px 56px;
+    }
+    textarea::placeholder {
+      color: rgba(205, 183, 143, 0.6);
+      font-style: italic;
+      white-space: pre-line;
+    }
+    .app { position: relative; z-index: 1; display: flex; width: 100vw; height: 100vh; }
+    .sidebar {
+      width: 390px;
+      padding: 16px;
+      background: rgba(11, 9, 23, 0.82);
+      border-right: 1px solid rgba(127, 98, 63, 0.5);
+      backdrop-filter: blur(18px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .panel {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--panel1), var(--panel2));
+      border-radius: 26px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .panel-scroll {
+      min-height: 0;
+      overflow-y: auto;
+      display: grid;
+      gap: 16px;
+      padding-right: 4px;
+      height: 100%;
+    }
+    .title-top { font-size: 11px; text-transform: uppercase; letter-spacing: .3em; color: var(--muted); }
+    .title-main { margin-top: 6px; font-size: 24px; font-weight: 700; color: #f3dfb8; }
+    .top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    button, .fake-label {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border-radius: 16px; border: 1px solid #7d6445; background: rgba(21,18,34,.8);
+      color: #ecd8af; padding: 10px 12px; font-size: 14px; cursor: pointer;
+      transition: transform .12s ease, border-color .12s ease; user-select: none; text-decoration: none;
+    }
+    button:hover, .fake-label:hover { transform: translateY(-1px); border-color: #d2af74; }
+    .accent { border-color: #a78356; background: linear-gradient(135deg, #463061, #2a183a); color: #f7e8c4; }
+    .danger { border-color: #7b4b4b; background: var(--danger-bg); color: var(--danger); }
+    .search-wrap {
+      border-radius: 14px; border: 1px solid rgba(122,94,64,.6); background: rgba(0,0,0,.2); padding: 8px;
+    }
+    .search-box {
+      display: flex; align-items: center; gap: 8px; border-radius: 10px; border: 1px solid rgba(115,86,58,.7);
+      background: var(--input); padding: 8px 10px;
+    }
+    input, select, textarea {
+      width: 100%; border-radius: 12px; border: 1px solid rgba(134,109,77,.6); background: var(--input);
+      color: var(--text); padding: 10px 12px; font-size: 14px; outline: none;
+    }
+    textarea { min-height: 132px; resize: vertical; border-radius: 16px; }
+    .search-box input { border: 0; background: transparent; padding: 0; }
+    .field { display: grid; gap: 6px; }
+    .field label { font-size: 11px; text-transform: uppercase; letter-spacing: .22em; color: rgba(210,195,161,.8); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stack { display: grid; gap: 12px; }
+    .status {
+      border-radius: 12px; border: 1px solid rgba(95,74,51,.7); background: rgba(9,8,17,.65);
+      padding: 8px 10px; font-size: 11px; color: #cdb78f;
+    }
+    .warning-list {
+      max-height: 144px; overflow-y: auto; display: grid; gap: 8px; border-radius: 16px;
+      border: 1px solid rgba(95,74,51,.7); background: rgba(9,8,17,.65); padding: 12px;
+    }
+    .issue { display: flex; gap: 8px; align-items: flex-start; border-radius: 12px; padding: 8px 10px; font-size: 14px; }
+    .issue.error { background: rgba(42,19,22,.6); color: #ffcbc4; }
+    .issue.warning { background: rgba(42,36,19,.6); color: var(--warn); }
+    .main { position: relative; flex: 1; overflow: hidden; }
+    .toolbar {
+      position: absolute; left: 16px; top: 16px; z-index: 20; display: flex; align-items: center; gap: 8px;
+      border-radius: 16px; border: 1px solid rgba(132,100,69,.6); background: rgba(11,9,23,.78);
+      padding: 8px; backdrop-filter: blur(18px);
+    }
+    .toolbar .mini { padding: 8px; }
+    .hint {
+      display: flex; align-items: center; gap: 8px; border-radius: 12px; border: 1px solid #7d6445;
+      background: rgba(21,18,34,.8); padding: 10px 12px; font-size: 14px; color: #ecd8af;
+    }
+    .stage { position: relative; width: 100%; height: 100%; overflow: hidden; }
+    .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    .card {
+      position: absolute; width: 250px; height: 168px; overflow: hidden; border-radius: 22px;
+      border: 1px solid rgba(140,106,73,.7); box-shadow: 0 20px 45px rgba(0,0,0,.3); backdrop-filter: blur(6px);
+      transform-origin: top left; cursor: grab;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(149,86,255,.28), transparent 34%),
+        radial-gradient(circle at 78% 10%, rgba(55,131,255,.22), transparent 28%),
+        linear-gradient(145deg, rgba(24,16,46,.96), rgba(12,11,24,.94) 48%, rgba(27,15,54,.96));
+    }
+    .card.selected { border-color: var(--gold); box-shadow: 0 20px 45px rgba(143,99,255,.3); }
+    .card::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,.07), transparent 30%, transparent 70%, rgba(0,0,0,.15));
+    }
+    .card::after {
+      content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .7;
+    }
+    .card-inner { position: relative; display: flex; flex-direction: column; height: 100%; padding: 16px; }
+    .card-top { display: flex; justify-content: space-between; gap: 12px; padding-right: 40px; }
+    .card-sub { font-size: 10px; text-transform: uppercase; letter-spacing: .28em; color: var(--muted); }
+    .card-name { margin-top: 4px; font-size: 17px; font-weight: 700; color: #f4e3bf; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+    .card-id { margin-top: 4px; font-size: 12px; color: #ccb997; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+    .sex-badge {
+      width: 44px; height: 44px; border-radius: 999px; display: grid; place-items: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .sex-f { border: 1px solid rgba(195,141,255,.7); background: rgba(95,42,130,.4); color: #f0ccff; }
+    .sex-m { border: 1px solid rgba(108,167,255,.7); background: rgba(23,60,118,.4); color: #c9e3ff; }
+    .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+    .stat { border-radius: 12px; border: 1px solid rgba(117,88,63,.7); background: rgba(0,0,0,.2); padding: 8px 12px; font-size: 12px; }
+    .stat-title { color: var(--muted); }
+    .stat-value { margin-top: 4px; color: #f4e3bf; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-line { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #dbc59f; margin-top: 12px; }
+    .card-line.small-gap { margin-top: 8px; }
+    .card-bottom { margin-top: auto; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .traits-preview { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
+    .drag-pill { border-radius: 999px; border: 1px solid rgba(140,106,73,.7); padding: 4px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .2em; color: #e6cf9f; }
+    .edit-btn {
+      position: absolute; right: 12px; top: 12px; z-index: 3; width: 32px; height: 32px;
+      display: grid; place-items: center; border-radius: 999px; border: 1px solid rgba(140,106,73,.7);
+      background: rgba(19,15,34,.85); color: #ecd8af; cursor: pointer;
+    }
+    .empty-select {
+      border-radius: 32px; border: 1px solid rgba(122,94,64,.6); background: rgba(0,0,0,.16); padding: 28px;
+    }
+    .empty-select-inner {
+      border-radius: 28px; border: 1px dashed rgba(122,94,64,.6); padding: 48px 24px; text-align: center; font-size: 22px; color: #cdb78f;
+    }
+    .modal-backdrop {
+      position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 50;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
+    }
+    .modal {
+      width: 100%; max-width: 1100px; border-radius: 30px; border: 1px solid #8a6a47;
+      background: linear-gradient(145deg, rgba(18,14,35,.98), rgba(8,8,18,.98));
+      padding: 20px; box-shadow: 0 24px 60px rgba(0,0,0,.7);
+    }
+    .modal.small { max-width: 720px; }
+    .context-menu {
+      position: fixed; z-index: 60; min-width: 220px; border-radius: 22px; border: 1px solid #8a6a47;
+      background: linear-gradient(145deg, rgba(19,15,37,.98), rgba(9,9,19,.98)); padding: 8px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.6); backdrop-filter: blur(14px);
+    }
+    .db-list {
+      max-height: 128px; overflow-y: auto; display: grid; gap: 4px; border-radius: 12px;
+      border: 1px solid rgba(95,74,51,.7); background: rgba(9,8,17,.65); padding: 8px;
+    }
+    .db-item { border-radius: 8px; padding: 4px 8px; font-size: 14px; color: #e8d3ac; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="panel-scroll">
+        <div class="panel" id="validationPanel" style="display:none;"></div>
+        <div id="editorHost"></div>
+      </div>
+    </aside>
+    <main class="main">
+      <div style="position:absolute;right:16px;top:16px;z-index:25;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:560px;">
+          <button id="saveJsonBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">💾 Save JSON</button>
+          <label class="fake-label" for="loadJsonInput" style="padding:6px 8px;font-size:12px;border-radius:12px;">📂 Load JSON</label>
+          <input id="loadJsonInput" type="file" accept="application/json" hidden />
+          <button id="exportBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">📄 Export</button>
+          <button id="newProjectBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">➕ New Project</button>
+        </div>
+        <div class="search-wrap" style="width:180px;max-width:180px;">
+          <div class="search-box">
+            <span>🔎</span>
+            <input id="searchInput" placeholder="Search" />
+          </div>
+        </div>
+        <button id="toggleDatabaseBtn" style="width:180px;justify-content:space-between;padding:8px 10px;font-size:12px;border-radius:12px;">
+          <span>Database</span>
+          <span id="databaseChevron">⌄</span>
+        </button>
+        <div id="databaseDropdown" class="panel" style="display:none;width:320px;max-width:calc(100vw - 440px);padding:12px;"></div>
+        <div id="saveStatus" class="status" style="display:none;width:220px;max-width:220px;"></div>
+      </div>
+      <div class="toolbar">
+        <button class="mini" id="zoomInBtn">＋</button>
+        <button class="mini" id="zoomOutBtn">－</button>
+        <div class="hint">✥ MMB pan · wheel zoom · RMB create</div>
+      </div>
+      <div class="stage" id="stage">
+        <svg id="lineLayer"></svg>
+        <div id="cardLayer"></div>
+      </div>
+    </main>
+  </div>
+  <div id="contextMenu" class="context-menu" style="display:none;">
+    <button id="createHereBtn" style="width:100%;justify-content:flex-start;">➕ Create character</button>
+  </div>
+  <div id="quickEditModal" class="modal-backdrop" style="display:none;">
+    <div class="modal small">
+      <div class="top-row" style="margin-bottom:16px;">
+        <div>
+          <div class="title-top">Quick Edit</div>
+          <div class="title-main" id="quickEditTitle">Unnamed</div>
+        </div>
+        <button id="closeQuickEditBtn">✕</button>
+      </div>
+      <div id="quickEditBody"></div>
+    </div>
+  </div>
+  <div id="exportModal" class="modal-backdrop" style="display:none;">
+    <div class="modal">
+      <div class="top-row" style="margin-bottom:16px;">
+        <div>
+          <div class="title-top">Export preview</div>
+          <div class="title-main">CK3 Character Code</div>
+        </div>
+        <button id="closeExportBtn">✕</button>
+      </div>
+      <div style="border-radius:24px;border:1px solid rgba(125,100,69,.7);background:rgba(0,0,0,.25);padding:12px;">
+        <textarea id="exportTextarea" readonly style="width:100%;min-height:440px;border-radius:18px;border:1px solid rgba(95,74,51,.7);background:#090811;padding:16px;color:#f3dfb8;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;font-size:13px;line-height:1.65;outline:none;box-sizing:border-box;"></textarea>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="accent" id="copyExportBtn">💾 Copy to clipboard</button>
+        <button id="downloadExportBtn">⬇ Download .txt</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const CARD_WIDTH = 250;
+    const CARD_HEIGHT = 168;
+    const state = {
+      characters: [],
+      selectedId: null,
+      quickEditId: null,
+      camera: { x: 180, y: 120, zoom: 1 },
+      search: "",
+      databaseOpen: false,
+      cultures: [],
+      religions: [],
+      saveStatus: "",
+      contextMenu: null,
+      draggingNodeId: null,
+      panning: false,
+      exportOpen: false,
+    };
+    const els = {
+      validationPanel: document.getElementById("validationPanel"),
+      editorHost: document.getElementById("editorHost"),
+      databaseDropdown: document.getElementById("databaseDropdown"),
+      databaseChevron: document.getElementById("databaseChevron"),
+      saveStatus: document.getElementById("saveStatus"),
+      lineLayer: document.getElementById("lineLayer"),
+      cardLayer: document.getElementById("cardLayer"),
+      stage: document.getElementById("stage"),
+      contextMenu: document.getElementById("contextMenu"),
+      exportModal: document.getElementById("exportModal"),
+      exportTextarea: document.getElementById("exportTextarea"),
+      quickEditModal: document.getElementById("quickEditModal"),
+      quickEditTitle: document.getElementById("quickEditTitle"),
+      quickEditBody: document.getElementById("quickEditBody"),
+      loadJsonInput: document.getElementById("loadJsonInput"),
+      searchInput: document.getElementById("searchInput"),
+      createHereBtn: document.getElementById("createHereBtn"),
+    };
+    let nodeDragRef = { x: 0, y: 0, charX: 0, charY: 0 };
+    let panStartRef = { x: 0, y: 0, cameraX: 0, cameraY: 0 };
+
+    function selectedCharacter() { return state.characters.find((c) => c.id === state.selectedId) || null; }
+    function quickEditCharacter() { return state.characters.find((c) => c.id === state.quickEditId) || null; }
+    function visibleCharacters() {
+      if (!state.search.trim()) return state.characters;
+      const q = state.search.toLowerCase();
+      return state.characters.filter((c) => c.id.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.dynasty.toLowerCase().includes(q));
+    }
+    function clampZoom(value) { return Math.max(0.45, Math.min(1.85, value)); }
+
+    function commitActiveEditorField() {
+      const active = document.activeElement;
+      if (!active) return;
+      const tag = active.tagName;
+      const isEditorField = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') && (active.closest('#editorHost') || active.closest('#quickEditBody'));
+      if (!isEditorField) return;
+      active.blur();
+    }
+
+    function getGender(char) { return char && char.gender ? char.gender : 'female'; }
+    function normalizeCharacter(char) {
+      const normalized = { ...char };
+      normalized.gender = normalized.gender || 'female';
+      normalized.dna = normalized.dna || '';
+      return normalized;
+    }
+    function uniqueSorted(values) { return [...new Set(values.map((v) => String(v).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)); }
+    function escapeHtml(text) { return String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+    function parseTraits(text) { return text.split('\n').map((t) => t.trim()).filter(Boolean); }
+    function formatTraitsForTextarea(traits) { return traits.join('\n'); }
+    function escapeCK3String(value) { return String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"'); }
+    function setStatus(text) {
+      state.saveStatus = text;
+      render();
+      clearTimeout(setStatus._timer);
+      if (text) setStatus._timer = setTimeout(() => { state.saveStatus = ''; render(); }, 2200);
+    }
+    function validateCharacters(chars) {
+      const ids = new Map();
+      const issues = [];
+      chars.forEach((char) => {
+        if (!char.id.trim()) issues.push({ type: 'error', message: `Character “${char.name || 'Unnamed'}” is missing an id.` });
+        ids.set(char.id, (ids.get(char.id) || 0) + 1);
+      });
+      chars.forEach((char) => {
+        if (char.id && ids.get(char.id) > 1) issues.push({ type: 'error', message: `Duplicate id found: ${char.id}` });
+        if (char.spouse && !char.marriageDate) issues.push({ type: 'warning', message: `${char.id || char.name || 'Character'}: spouse is set but marriage date is empty.` });
+        if (char.deathDate && char.birthDate && char.deathDate === char.birthDate) issues.push({ type: 'warning', message: `${char.id || char.name || 'Character'}: birth and death dates are identical.` });
+      });
+      return issues;
+    }
+    function relationLines() {
+      const byId = Object.fromEntries(state.characters.map((c) => [c.id, c]));
+      const lines = [];
+      state.characters.forEach((char) => {
+        if (char.father && byId[char.father]) lines.push({ from: byId[char.father], to: char, type: 'blood' });
+        if (char.mother && byId[char.mother]) lines.push({ from: byId[char.mother], to: char, type: 'blood' });
+        if (char.spouse && byId[char.spouse] && char.id < char.spouse) lines.push({ from: char, to: byId[char.spouse], type: 'marriage' });
+      });
+      return lines;
+    }
+    function syncSpouseData(list, sourceId) {
+      const source = list.find((c) => c.id === sourceId);
+      if (!source || !source.spouse) return list;
+      return list.map((char) => char.id === source.spouse ? { ...char, spouse: source.id, marriageDate: source.marriageDate || char.marriageDate, matrilineal: !!source.matrilineal } : char);
+    }
+    function sanitizeRelationshipFields(char) {
+      if (char.spouse) return char;
+      return { ...char, marriageDate: '', matrilineal: false };
+    }
+    function updateCharacterById(targetId, patch) {
+      const target = state.characters.find((c) => c.id === targetId);
+      if (!target) return;
+      const oldId = target.id;
+      const newId = patch.id;
+      let next = state.characters.map((char) => char.id === oldId ? sanitizeRelationshipFields({ ...char, ...patch }) : char);
+      if (newId && newId !== oldId) {
+        next = next.map((char) => {
+          const replaceLink = (value) => value === oldId ? newId : value;
+          return { ...char, father: replaceLink(char.father), mother: replaceLink(char.mother), spouse: replaceLink(char.spouse) };
+        });
+      }
+      state.characters = syncSpouseData(next, newId && newId !== oldId ? newId : oldId);
+      if (newId && newId !== oldId) {
+        if (state.selectedId === oldId) state.selectedId = newId;
+        if (state.quickEditId === oldId) state.quickEditId = newId;
+      }
+      render();
+    }
+    function updateSelectedCharacter(patch) {
+      const char = selectedCharacter();
+      if (!char) return;
+      updateCharacterById(char.id, patch);
+    }
+    function addCharacterAt(x, y) {
+      const nextIdBase = `new_character_${state.characters.length + 1}`;
+      const nextId = state.characters.some((c) => c.id === nextIdBase) ? `${nextIdBase}_${Math.floor(Math.random() * 1000)}` : nextIdBase;
+      const newCharacter = { id: nextId, name: `Character${state.characters.length + 1}`, dynasty: '', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, traits: [], x, y };
+      state.characters.push(newCharacter);
+      state.selectedId = newCharacter.id;
+      state.contextMenu = null;
+      render();
+    }
+    function deleteSelected() {
+      const char = selectedCharacter();
+      if (!char) return;
+      const removedId = char.id;
+      state.characters = state.characters.filter((c) => c.id !== removedId).map((c) => ({ ...c, father: c.father === removedId ? '' : c.father, mother: c.mother === removedId ? '' : c.mother, spouse: c.spouse === removedId ? '' : c.spouse }));
+      state.selectedId = state.characters[0] ? state.characters[0].id : null;
+      if (state.quickEditId === removedId) state.quickEditId = null;
+      render();
+    }
+    function createNewProject() {
+      state.characters = [];
+      state.selectedId = null;
+      state.quickEditId = null;
+      state.camera = { x: 180, y: 120, zoom: 1 };
+      state.contextMenu = null;
+      state.search = '';
+      state.saveStatus = '';
+      state.cultures = [];
+      state.religions = [];
+      render();
+    }
+    function generateCK3Code(characters) {
+      return characters.map((char) => {
+        const lines = [];
+        lines.push(`${char.id || 'character_id'} = {`);
+        if (char.name) lines.push(`\tname = "${escapeCK3String(char.name)}"`);
+        if (char.dynasty) lines.push(`\tdynasty = ${char.dynasty}`);
+        if ((char.dna || '').trim()) lines.push(`\tdna = ${(char.dna || '').trim()}`);
+        if (getGender(char) === 'female') lines.push(`\tfemale = yes`);
+        lines.push(`	religion = "${escapeCK3String(char.religion || '')}"`);
+        lines.push(`	culture = "${escapeCK3String(char.culture || '')}"`);
+        if (char.father) lines.push(`\tfather = ${char.father}`);
+        if (char.mother) lines.push(`\tmother = ${char.mother}`);
+        char.traits.forEach((trait) => lines.push(`\ttrait = ${trait}`));
+        if (char.birthDate) { lines.push(`\t${char.birthDate} = {`); lines.push(`\t\tbirth = yes`); lines.push(`\t}`); }
+        if (char.spouse && char.marriageDate) {
+          const shouldWriteMarriage = getGender(char) === 'female' ? char.matrilineal : !char.matrilineal;
+          if (shouldWriteMarriage) {
+            lines.push(`\t${char.marriageDate} = {`);
+            lines.push(`\t\t${char.matrilineal ? 'add_matrilineal_spouse' : 'add_spouse'} = ${char.spouse}`);
+            lines.push(`\t}`);
+          }
+        }
+        if (char.deathDate) { lines.push(`\t${char.deathDate} = {`); lines.push(`\t\tdeath = yes`); lines.push(`\t}`); }
+        lines.push(`}`);
+        return lines.join('\n');
+      }).join('\n');
+    }
+    function fallbackDownload(text, filename, mime) {
+      const blob = new Blob([text], { type: mime || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setStatus('Downloaded file');
+    }
+    function saveProjectJson() {
+      const payload = { version: 1, camera: state.camera, cultures: state.cultures, religions: state.religions, characters: state.characters.map(({ sex, ...char }) => normalizeCharacter(char)) };
+      const jsonText = JSON.stringify(payload, null, 2);
+      if (window.showSaveFilePicker) {
+        window.showSaveFilePicker({ suggestedName: 'ck3_tree_project.json', types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }] })
+          .then((handle) => handle.createWritable().then((w) => w.write(jsonText).then(() => w.close())))
+          .then(() => setStatus('Saved to file'))
+          .catch((error) => {
+            if (error && error.name === 'AbortError') return;
+            console.error(error);
+            fallbackDownload(jsonText, 'ck3_tree_project.json', 'application/json;charset=utf-8');
+          });
+      } else {
+        fallbackDownload(jsonText, 'ck3_tree_project.json', 'application/json;charset=utf-8');
+      }
+    }
+    function loadProjectJson(file) {
+      if (!file) return;
+      file.text().then((text) => {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.characters)) state.characters = parsed.characters.map(normalizeCharacter);
+        if (parsed.camera) state.camera = parsed.camera;
+        if (Array.isArray(parsed.cultures)) state.cultures = uniqueSorted(parsed.cultures);
+        if (Array.isArray(parsed.religions)) state.religions = uniqueSorted(parsed.religions);
+        state.selectedId = parsed.characters && parsed.characters[0] ? parsed.characters[0].id : null;
+        state.quickEditId = null;
+        render();
+      }).catch((error) => { console.error(error); alert('Could not import project JSON.'); });
+    }
+    function bindValueInput(id, handler, mode) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const commit = () => handler(el.type === 'checkbox' ? el.checked : el.value);
+      if (mode === 'change') el.onchange = commit;
+      else if (mode === 'blur') {
+        el.onblur = commit;
+        el.onkeydown = (e) => {
+          if (e.key === 'Enter' && el.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            e.stopPropagation();
+            commit();
+            el.blur();
+          }
+        };
+      } else el.oninput = commit;
+      el.onmousedown = (e) => e.stopPropagation();
+      el.onclick = (e) => e.stopPropagation();
+    }
+    function renderValidation() {
+      const issues = validateCharacters(state.characters);
+      if (!issues.length) { els.validationPanel.style.display = 'none'; return; }
+      els.validationPanel.style.display = 'block';
+      const hasErrors = issues.some((i) => i.type === 'error');
+      els.validationPanel.innerHTML = `<div class="top-row" style="margin-bottom:12px;align-items:center;"><div><div class="title-top">Validation</div><div style="margin-top:6px;font-size:18px;font-weight:700;color:#f3dfb8;">Project Health</div></div><div style="border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;border:${hasErrors ? '1px solid #9b4b4b' : '1px solid #7c6840'};background:${hasErrors ? 'rgba(49,19,24,.7)' : 'rgba(42,36,19,.7)'};color:${hasErrors ? '#ffbcb3' : '#f0ddb0'};">${hasErrors ? 'Needs fixes' : 'Warnings'}</div></div><div class="warning-list">${issues.map((issue) => `<div class="issue ${issue.type}"><span>⚠</span><span>${escapeHtml(issue.message)}</span></div>`).join('')}</div>`;
+    }
+    function renderEditorPanel() {
+      const char = selectedCharacter();
+      if (!char) {
+        els.editorHost.innerHTML = `<div class="panel empty-select"><div class="empty-select-inner">Create or select a character.</div></div>`;
+        return;
+      }
+      const idOptions = state.characters.map((c) => c.id).filter(Boolean).sort().map((id) => `<option value="${escapeHtml(id)}"></option>`).join('');
+      const cultureOptions = uniqueSorted([...state.cultures, ...state.characters.map((c) => c.culture)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
+      const religionOptions = uniqueSorted([...state.religions, ...state.characters.map((c) => c.religion)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
+      els.editorHost.innerHTML = `<div class="panel"><div class="top-row" style="margin-bottom:16px;"><div><div class="title-top">Selected</div><div class="title-main">${escapeHtml(char.name || 'Unnamed')}</div></div><button class="danger" id="deleteSelectedBtn">Delete</button></div><datalist id="character-ids-list">${idOptions}</datalist><datalist id="culture-list">${cultureOptions}</datalist><datalist id="religion-list">${religionOptions}</datalist><div class="stack"><div class="grid-2"><div class="field"><label>Character id</label><input id="field-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="field-dna" value="${escapeHtml(char.dna || '')}"></div></div><div class="grid-2"><div class="field"><label>Name</label><input id="field-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Gender</label><select id="field-gender"><option value="female" ${getGender(char) === 'female' ? 'selected' : ''}>Female</option><option value="male" ${getGender(char) === 'male' ? 'selected' : ''}>Male</option></select></div></div><div class="field"><label>Dynasty</label><input id="field-dynasty" value="${escapeHtml(char.dynasty)}"></div><div class="grid-2"><div class="field"><label>Birth date</label><input id="field-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label>Death date</label><input id="field-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div></div><div class="grid-2"><div class="field"><label>Culture</label><input id="field-culture" list="culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="field-religion" list="religion-list" value="${escapeHtml(char.religion)}"></div></div><div class="grid-2"><div class="field"><label>Father</label><input id="field-father" list="character-ids-list" value="${escapeHtml(char.father)}"></div><div class="field"><label>Mother</label><input id="field-mother" list="character-ids-list" value="${escapeHtml(char.mother)}"></div></div><div class="field"><label>Spouse</label><input id="field-spouse" list="character-ids-list" value="${escapeHtml(char.spouse)}"></div><div class="grid-2"><div class="field"><label>Marriage date</label><input id="field-marriage" value="${escapeHtml(char.marriageDate)}"></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="field-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label></div><div class="field"><label>Traits</label><textarea id="field-traits" placeholder="example:
+humble
+compassionate
+content
+education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</textarea></div></div></div>`;
+      document.getElementById('deleteSelectedBtn').onclick = deleteSelected;
+      bindValueInput('field-id', (v) => updateSelectedCharacter({ id: String(v).trim() }), 'blur');
+      bindValueInput('field-dna', (v) => updateSelectedCharacter({ dna: String(v).trim() }), 'blur');
+      bindValueInput('field-name', (v) => updateSelectedCharacter({ name: v }), 'blur');
+      bindValueInput('field-gender', (v) => updateSelectedCharacter({ gender: v, sex: undefined }), 'change');
+      bindValueInput('field-dynasty', (v) => updateSelectedCharacter({ dynasty: v }), 'blur');
+      bindValueInput('field-birth', (v) => updateSelectedCharacter({ birthDate: String(v).trim() }), 'blur');
+      bindValueInput('field-death', (v) => updateSelectedCharacter({ deathDate: String(v).trim() }), 'blur');
+      bindValueInput('field-culture', (v) => updateSelectedCharacter({ culture: v }), 'blur');
+      bindValueInput('field-religion', (v) => updateSelectedCharacter({ religion: v }), 'blur');
+      bindValueInput('field-father', (v) => updateSelectedCharacter({ father: String(v).trim() }), 'blur');
+      bindValueInput('field-mother', (v) => updateSelectedCharacter({ mother: String(v).trim() }), 'blur');
+      const spouseField = document.getElementById('field-spouse');
+      if (spouseField) {
+        const commitSpouse = () => updateSelectedCharacter({ spouse: String(spouseField.value).trim() });
+        spouseField.onchange = commitSpouse;
+        spouseField.onblur = commitSpouse;
+        spouseField.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            commitSpouse();
+          }
+        };
+        spouseField.onmousedown = (e) => e.stopPropagation();
+        spouseField.onclick = (e) => e.stopPropagation();
+      }
+      bindValueInput('field-marriage', (v) => updateSelectedCharacter({ marriageDate: String(v).trim() }), 'blur');
+      bindValueInput('field-matrilineal', (v) => updateSelectedCharacter({ matrilineal: !!v }), 'change');
+      const traits = document.getElementById('field-traits');
+      traits.onblur = (e) => updateSelectedCharacter({ traits: parseTraits(e.target.value) });
+      traits.onmousedown = (e) => e.stopPropagation();
+      traits.onclick = (e) => e.stopPropagation();
+    }
+    function renderDatabase() {
+      els.databaseChevron.style.transform = state.databaseOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+      els.databaseDropdown.style.display = state.databaseOpen ? 'block' : 'none';
+      if (!state.databaseOpen) { els.databaseDropdown.innerHTML = ''; return; }
+      const cultureOptions = uniqueSorted([...state.cultures, ...state.characters.map((c) => c.culture)]);
+      const religionOptions = uniqueSorted([...state.religions, ...state.characters.map((c) => c.religion)]);
+      els.databaseDropdown.innerHTML = `<div style="display:grid;gap:12px;"><div style="border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px;"><div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#f3dfb8;">🏛 Cultures</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input id="newCultureInput" placeholder="new_culture"><button class="accent" id="addCultureBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">Add</button></div><div class="db-list">${cultureOptions.map((culture) => `<div class="db-item">${escapeHtml(culture)}</div>`).join('')}</div></div><div style="border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px;"><div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#f3dfb8;">📖 Religions</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input id="newReligionInput" placeholder="new_religion"><button class="accent" id="addReligionBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">Add</button></div><div class="db-list">${religionOptions.map((religion) => `<div class="db-item">${escapeHtml(religion)}</div>`).join('')}</div></div></div>`;
+      document.getElementById('addCultureBtn').onclick = () => {
+        const input = document.getElementById('newCultureInput');
+        const value = input.value.trim();
+        if (!value) return;
+        state.cultures = uniqueSorted([...state.cultures, value]);
+        render();
+      };
+      document.getElementById('addReligionBtn').onclick = () => {
+        const input = document.getElementById('newReligionInput');
+        const value = input.value.trim();
+        if (!value) return;
+        state.religions = uniqueSorted([...state.religions, value]);
+        render();
+      };
+    }
+    function renderCards() {
+      const list = visibleCharacters();
+      els.cardLayer.innerHTML = '';
+      list.forEach((character) => {
+        const div = document.createElement('div');
+        div.className = `card ${state.selectedId === character.id ? 'selected' : ''}`;
+        div.style.transform = `translate(${state.camera.x + character.x * state.camera.zoom}px, ${state.camera.y + character.y * state.camera.zoom}px) scale(${state.camera.zoom})`;
+        div.innerHTML = `<button class="edit-btn" type="button">✎</button><div class="card-inner"><div class="card-top"><div><div class="card-sub">Character</div><div class="card-name">${escapeHtml(character.name || 'Unnamed')}</div><div class="card-id">${escapeHtml(character.id || 'no_id_yet')}</div></div><button class="sex-badge ${getGender(character) === 'female' ? 'sex-f' : 'sex-m'}" type="button">${getGender(character) === 'female' ? 'F' : 'M'}</button></div><div class="card-stats"><div class="stat"><div class="stat-title">Dynasty</div><div class="stat-value">${escapeHtml(character.dynasty || '—')}</div></div><div class="stat"><div class="stat-title">Birth</div><div class="stat-value">${escapeHtml(character.birthDate || '—')}</div></div></div><div class="card-line"><span style="color:#8cffb6;">👥</span><span>${character.father || character.mother ? 'Blood links' : 'No parents set'}</span></div><div class="card-line small-gap"><span style="color:#ffd25f;">❤</span><span>${escapeHtml(character.spouse || 'No spouse set')}</span></div><div class="card-bottom"><div class="traits-preview">${escapeHtml(character.traits.slice(0, 2).join(', ') || 'No traits')}</div><div class="drag-pill">Drag</div></div></div>`;
+        div.onclick = (e) => {
+          e.stopPropagation();
+          if (state.selectedId !== character.id) commitActiveEditorField();
+          state.selectedId = character.id;
+          render();
+        };
+        div.onmousedown = (e) => {
+          if (e.button !== 0) return;
+          if (e.target.closest('.edit-btn') || e.target.closest('.sex-badge')) return;
+          e.stopPropagation();
+          if (state.selectedId !== character.id) commitActiveEditorField();
+          state.selectedId = character.id;
+          state.draggingNodeId = character.id;
+          nodeDragRef = { x: e.clientX, y: e.clientY, charX: character.x, charY: character.y };
+          render();
+        };
+        div.querySelector('.edit-btn').onmousedown = (e) => e.stopPropagation();
+        div.querySelector('.edit-btn').onclick = (e) => { e.stopPropagation(); state.quickEditId = character.id; renderQuickEdit(); };
+        div.querySelector('.sex-badge').onmousedown = (e) => e.stopPropagation();
+        div.querySelector('.sex-badge').onclick = (e) => { e.stopPropagation(); updateCharacterById(character.id, { gender: getGender(character) === 'female' ? 'male' : 'female', sex: undefined }); };
+        els.cardLayer.appendChild(div);
+      });
+    }
+    function renderLines() {
+      const lines = relationLines();
+      els.lineLayer.innerHTML = '';
+      lines.forEach((line) => {
+        const x1 = state.camera.x + (line.from.x + CARD_WIDTH / 2) * state.camera.zoom;
+        const y1 = state.camera.y + (line.from.y + CARD_HEIGHT / 2) * state.camera.zoom;
+        const x2 = state.camera.x + (line.to.x + CARD_WIDTH / 2) * state.camera.zoom;
+        const y2 = state.camera.y + (line.to.y + CARD_HEIGHT / 2) * state.camera.zoom;
+        const dx = Math.abs(x2 - x1) * 0.38 + 40;
+        const path = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+        const color = line.type === 'marriage' ? '#e2bc63' : '#71f0a5';
+        const glow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        glow.setAttribute('d', path); glow.setAttribute('fill', 'none'); glow.setAttribute('stroke', color); glow.setAttribute('stroke-opacity', '0.16'); glow.setAttribute('stroke-width', '10');
+        const main = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        main.setAttribute('d', path); main.setAttribute('fill', 'none'); main.setAttribute('stroke', color); main.setAttribute('stroke-opacity', '0.88'); main.setAttribute('stroke-width', '2.8');
+        if (line.type === 'blood') main.setAttribute('stroke-dasharray', '8 5');
+        els.lineLayer.appendChild(glow); els.lineLayer.appendChild(main);
+        if (line.type === 'blood') {
+          const t = 0.5;
+          const midX = Math.pow(1 - t, 3) * x1 + 3 * Math.pow(1 - t, 2) * t * (x1 + dx) + 3 * (1 - t) * Math.pow(t, 2) * (x2 - dx) + Math.pow(t, 3) * x2;
+          const midY = Math.pow(1 - t, 3) * y1 + 3 * Math.pow(1 - t, 2) * t * y1 + 3 * (1 - t) * Math.pow(t, 2) * y2 + Math.pow(t, 3) * y2;
+          const tangentX = 3 * Math.pow(1 - t, 2) * ((x1 + dx) - x1) + 6 * (1 - t) * t * ((x2 - dx) - (x1 + dx)) + 3 * Math.pow(t, 2) * (x2 - (x2 - dx));
+          const tangentY = 6 * (1 - t) * t * (y2 - y1);
+          const angle = (Math.atan2(tangentY, tangentX) * 180) / Math.PI;
+          const outline = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          outline.setAttribute('points', '-7,-4 7,0 -7,4'); outline.setAttribute('fill', 'none'); outline.setAttribute('stroke', 'white'); outline.setAttribute('stroke-opacity', '0.98'); outline.setAttribute('stroke-width', '3.6'); outline.setAttribute('stroke-linejoin', 'round'); outline.setAttribute('transform', `translate(${midX} ${midY}) rotate(${angle})`);
+          const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          fill.setAttribute('points', '-7,-4 7,0 -7,4'); fill.setAttribute('fill', '#000000'); fill.setAttribute('fill-opacity', '0.96'); fill.setAttribute('transform', `translate(${midX} ${midY}) rotate(${angle})`);
+          els.lineLayer.appendChild(outline); els.lineLayer.appendChild(fill);
+        }
+      });
+    }
+    function renderQuickEdit() {
+      const char = quickEditCharacter();
+      if (!char) { els.quickEditModal.style.display = 'none'; return; }
+      els.quickEditTitle.textContent = char.name || 'Unnamed';
+      els.quickEditModal.style.display = 'grid';
+      const cultureOptions = uniqueSorted([...state.cultures, ...state.characters.map((c) => c.culture)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
+      const religionOptions = uniqueSorted([...state.religions, ...state.characters.map((c) => c.religion)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
+      els.quickEditBody.innerHTML = `<div class="grid-2"><div class="field"><label>Id</label><input id="qe-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="qe-dna" value="${escapeHtml(char.dna || '')}"></div><div class="field"><label>Name</label><input id="qe-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Birth date</label><input id="qe-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label>Death date</label><input id="qe-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div><div class="field"><label>Culture</label><input id="qe-culture" list="qe-culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="qe-religion" list="qe-religion-list" value="${escapeHtml(char.religion)}"></div></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;margin-top:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="qe-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label><datalist id="qe-culture-list">${cultureOptions}</datalist><datalist id="qe-religion-list">${religionOptions}</datalist>`;
+      bindValueInput('qe-id', (v) => updateCharacterById(char.id, { id: String(v).trim() }), 'blur');
+      bindValueInput('qe-dna', (v) => updateCharacterById(char.id, { dna: String(v).trim() }), 'blur');
+      bindValueInput('qe-name', (v) => updateCharacterById(char.id, { name: v }), 'blur');
+      bindValueInput('qe-birth', (v) => updateCharacterById(char.id, { birthDate: String(v).trim() }), 'blur');
+      bindValueInput('qe-death', (v) => updateCharacterById(char.id, { deathDate: String(v).trim() }), 'blur');
+      bindValueInput('qe-culture', (v) => updateCharacterById(char.id, { culture: v }), 'blur');
+      bindValueInput('qe-religion', (v) => updateCharacterById(char.id, { religion: v }), 'blur');
+      bindValueInput('qe-matrilineal', (v) => updateCharacterById(char.id, { matrilineal: !!v }), 'change');
+    }
+    function renderExportModal() {
+      els.exportModal.style.display = state.exportOpen ? 'grid' : 'none';
+      els.exportTextarea.value = generateCK3Code(state.characters);
+    }
+    function render() {
+      if (els.searchInput) els.searchInput.value = state.search;
+      renderValidation();
+      renderEditorPanel();
+      renderDatabase();
+      renderCards();
+      renderLines();
+      renderQuickEdit();
+      renderExportModal();
+      els.saveStatus.style.display = state.saveStatus ? 'block' : 'none';
+      els.saveStatus.textContent = state.saveStatus;
+      els.contextMenu.style.display = state.contextMenu ? 'block' : 'none';
+      if (state.contextMenu) {
+        els.contextMenu.style.left = `${state.contextMenu.clientX + 8}px`;
+        els.contextMenu.style.top = `${state.contextMenu.clientY + 8}px`;
+      }
+    }
+    document.getElementById('saveJsonBtn').onclick = saveProjectJson;
+    document.getElementById('exportBtn').onclick = () => { state.exportOpen = true; render(); };
+    document.getElementById('newProjectBtn').onclick = createNewProject;
+    document.getElementById('toggleDatabaseBtn').onclick = () => { state.databaseOpen = !state.databaseOpen; render(); };
+    document.getElementById('zoomInBtn').onclick = () => { state.camera.zoom = clampZoom(state.camera.zoom + 0.1); render(); };
+    document.getElementById('zoomOutBtn').onclick = () => { state.camera.zoom = clampZoom(state.camera.zoom - 0.1); render(); };
+    document.getElementById('closeQuickEditBtn').onclick = () => { state.quickEditId = null; render(); };
+    document.getElementById('closeExportBtn').onclick = () => { state.exportOpen = false; render(); };
+    document.getElementById('copyExportBtn').onclick = () => { if (navigator.clipboard) navigator.clipboard.writeText(els.exportTextarea.value); };
+    document.getElementById('downloadExportBtn').onclick = () => fallbackDownload(els.exportTextarea.value, 'ck3_characters.txt', 'text/plain;charset=utf-8');
+    els.loadJsonInput.onchange = (e) => loadProjectJson(e.target.files && e.target.files[0]);
+    els.searchInput.oninput = (e) => { state.search = e.target.value; render(); };
+    els.stage.oncontextmenu = (e) => {
+      e.preventDefault();
+      const rect = els.stage.getBoundingClientRect();
+      const worldX = (e.clientX - rect.left - state.camera.x) / state.camera.zoom;
+      const worldY = (e.clientY - rect.top - state.camera.y) / state.camera.zoom;
+      state.contextMenu = { clientX: e.clientX, clientY: e.clientY, worldX, worldY };
+      render();
+    };
+    els.stage.onmousedown = (e) => {
+      commitActiveEditorField();
+      state.contextMenu = null;
+      if (e.button === 1) {
+        e.preventDefault();
+        state.panning = true;
+        panStartRef = { x: e.clientX, y: e.clientY, cameraX: state.camera.x, cameraY: state.camera.y };
+      }
+      render();
+    };
+    window.onmousemove = (e) => {
+      if (state.panning) {
+        state.camera.x = panStartRef.cameraX + (e.clientX - panStartRef.x);
+        state.camera.y = panStartRef.cameraY + (e.clientY - panStartRef.y);
+        render();
+      }
+      if (state.draggingNodeId) {
+        const char = state.characters.find((c) => c.id === state.draggingNodeId);
+        if (!char) return;
+        char.x = nodeDragRef.charX + (e.clientX - nodeDragRef.x) / state.camera.zoom;
+        char.y = nodeDragRef.charY + (e.clientY - nodeDragRef.y) / state.camera.zoom;
+        render();
+      }
+    };
+    window.onmouseup = () => { state.panning = false; state.draggingNodeId = null; };
+    els.stage.onwheel = (e) => {
+      e.preventDefault();
+      const rect = els.stage.getBoundingClientRect();
+      const cursorX = e.clientX - rect.left;
+      const cursorY = e.clientY - rect.top;
+      const worldX = (cursorX - state.camera.x) / state.camera.zoom;
+      const worldY = (cursorY - state.camera.y) / state.camera.zoom;
+      const nextZoom = clampZoom(state.camera.zoom + (e.deltaY > 0 ? -0.08 : 0.08));
+      state.camera.x = cursorX - worldX * nextZoom;
+      state.camera.y = cursorY - worldY * nextZoom;
+      state.camera.zoom = nextZoom;
+      render();
+    };
+    els.stage.onclick = () => { state.contextMenu = null; render(); };
+    els.createHereBtn.onclick = () => { if (state.contextMenu) addCharacterAt(state.contextMenu.worldX, state.contextMenu.worldY); };
+    els.quickEditModal.onclick = (e) => { if (e.target === els.quickEditModal) { state.quickEditId = null; render(); } };
+    els.exportModal.onclick = (e) => { if (e.target === els.exportModal) { state.exportOpen = false; render(); } };
+    render();
+  </script>
+</body>
+</html>
