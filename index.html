@@ -641,35 +641,221 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       });
     }
     function renderLines() {
-      const lines = relationLines();
       els.lineLayer.innerHTML = '';
-      lines.forEach((line) => {
-        const x1 = state.camera.x + (line.from.x + CARD_WIDTH / 2) * state.camera.zoom;
-        const y1 = state.camera.y + (line.from.y + CARD_HEIGHT / 2) * state.camera.zoom;
-        const x2 = state.camera.x + (line.to.x + CARD_WIDTH / 2) * state.camera.zoom;
-        const y2 = state.camera.y + (line.to.y + CARD_HEIGHT / 2) * state.camera.zoom;
+
+      const byId = Object.fromEntries(state.characters.map((c) => [c.id, c]));
+      const zoom = state.camera.zoom;
+
+      function screenX(worldX) {
+        return state.camera.x + worldX * zoom;
+      }
+
+      function screenY(worldY) {
+        return state.camera.y + worldY * zoom;
+      }
+
+      function makeLine(x1, y1, x2, y2, color, width, opacity = 0.9, dash = '') {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', color);
+        line.setAttribute('stroke-width', width);
+        line.setAttribute('stroke-opacity', opacity);
+        line.setAttribute('stroke-linecap', 'round');
+        if (dash) line.setAttribute('stroke-dasharray', dash);
+        return line;
+      }
+
+      function makeCircle(cx, cy, r, color, opacity = 1) {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', cx);
+        circle.setAttribute('cy', cy);
+        circle.setAttribute('r', r);
+        circle.setAttribute('fill', color);
+        circle.setAttribute('fill-opacity', opacity);
+        return circle;
+      }
+
+      function makePath(d, color, width, opacity = 0.9, dash = '') {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', width);
+        path.setAttribute('stroke-opacity', opacity);
+        path.setAttribute('stroke-linecap', 'round');
+        if (dash) path.setAttribute('stroke-dasharray', dash);
+        return path;
+      }
+
+      function appendBloodArrow(x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const length = Math.hypot(dx, dy);
+        if (length < 24) return;
+        const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+
+        const outline = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        outline.setAttribute('points', '-7,-4 7,0 -7,4');
+        outline.setAttribute('fill', 'none');
+        outline.setAttribute('stroke', 'white');
+        outline.setAttribute('stroke-opacity', '0.98');
+        outline.setAttribute('stroke-width', '3.6');
+        outline.setAttribute('stroke-linejoin', 'round');
+        outline.setAttribute('transform', `translate(${midX} ${midY}) rotate(${angle})`);
+
+        const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        fill.setAttribute('points', '-7,-4 7,0 -7,4');
+        fill.setAttribute('fill', '#000000');
+        fill.setAttribute('fill-opacity', '0.96');
+        fill.setAttribute('transform', `translate(${midX} ${midY}) rotate(${angle})`);
+
+        els.lineLayer.appendChild(outline);
+        els.lineLayer.appendChild(fill);
+      }
+
+      function appendMarriageCurve(x1, y1, x2, y2) {
         const dx = Math.abs(x2 - x1) * 0.38 + 40;
-        const path = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-        const color = line.type === 'marriage' ? '#e2bc63' : '#71f0a5';
-        const glow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        glow.setAttribute('d', path); glow.setAttribute('fill', 'none'); glow.setAttribute('stroke', color); glow.setAttribute('stroke-opacity', '0.16'); glow.setAttribute('stroke-width', '10');
-        const main = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        main.setAttribute('d', path); main.setAttribute('fill', 'none'); main.setAttribute('stroke', color); main.setAttribute('stroke-opacity', '0.88'); main.setAttribute('stroke-width', '2.8');
-        if (line.type === 'blood') main.setAttribute('stroke-dasharray', '8 5');
-        els.lineLayer.appendChild(glow); els.lineLayer.appendChild(main);
-        if (line.type === 'blood') {
-          const t = 0.5;
-          const midX = Math.pow(1 - t, 3) * x1 + 3 * Math.pow(1 - t, 2) * t * (x1 + dx) + 3 * (1 - t) * Math.pow(t, 2) * (x2 - dx) + Math.pow(t, 3) * x2;
-          const midY = Math.pow(1 - t, 3) * y1 + 3 * Math.pow(1 - t, 2) * t * y1 + 3 * (1 - t) * Math.pow(t, 2) * y2 + Math.pow(t, 3) * y2;
-          const tangentX = 3 * Math.pow(1 - t, 2) * ((x1 + dx) - x1) + 6 * (1 - t) * t * ((x2 - dx) - (x1 + dx)) + 3 * Math.pow(t, 2) * (x2 - (x2 - dx));
-          const tangentY = 6 * (1 - t) * t * (y2 - y1);
-          const angle = (Math.atan2(tangentY, tangentX) * 180) / Math.PI;
-          const outline = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-          outline.setAttribute('points', '-7,-4 7,0 -7,4'); outline.setAttribute('fill', 'none'); outline.setAttribute('stroke', 'white'); outline.setAttribute('stroke-opacity', '0.98'); outline.setAttribute('stroke-width', '3.6'); outline.setAttribute('stroke-linejoin', 'round'); outline.setAttribute('transform', `translate(${midX} ${midY}) rotate(${angle})`);
-          const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-          fill.setAttribute('points', '-7,-4 7,0 -7,4'); fill.setAttribute('fill', '#000000'); fill.setAttribute('fill-opacity', '0.96'); fill.setAttribute('transform', `translate(${midX} ${midY}) rotate(${angle})`);
-          els.lineLayer.appendChild(outline); els.lineLayer.appendChild(fill);
+        const pathD = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+        els.lineLayer.appendChild(makePath(pathD, '#e2bc63', 10, 0.16));
+        els.lineLayer.appendChild(makePath(pathD, '#e2bc63', 2.8, 0.88));
+      }
+
+      function appendBloodLine(x1, y1, x2, y2, addArrow = false, width = 2.6) {
+        els.lineLayer.appendChild(makeLine(x1, y1, x2, y2, '#71f0a5', width + 5.2, 0.16));
+        els.lineLayer.appendChild(makeLine(x1, y1, x2, y2, '#71f0a5', width, 0.88, '8 5'));
+        if (addArrow) appendBloodArrow(x1, y1, x2, y2);
+      }
+
+      function appendBloodCurve(x1, y1, x2, y2, addArrow = false, width = 2.6) {
+        const dy = y2 - y1;
+        const bendY = Math.max(26 * zoom, Math.min(Math.abs(dy) * 0.45, 120 * zoom));
+        const pathD = `M ${x1} ${y1} C ${x1} ${y1 + bendY}, ${x2} ${y2 - bendY}, ${x2} ${y2}`;
+        els.lineLayer.appendChild(makePath(pathD, '#71f0a5', width + 5.2, 0.16));
+        els.lineLayer.appendChild(makePath(pathD, '#71f0a5', width, 0.88, '8 5'));
+        if (addArrow) appendBloodArrow(x1, y1, x2, y2);
+      }
+
+      const marriageCenters = new Map();
+
+      state.characters.forEach((char) => {
+        if (!char.spouse || !byId[char.spouse] || char.id > char.spouse) return;
+
+        const spouse = byId[char.spouse];
+        const x1 = screenX(char.x + CARD_WIDTH / 2);
+        const y1 = screenY(char.y + CARD_HEIGHT / 2);
+        const x2 = screenX(spouse.x + CARD_WIDTH / 2);
+        const y2 = screenY(spouse.y + CARD_HEIGHT / 2);
+
+        appendMarriageCurve(x1, y1, x2, y2);
+
+        const key = [char.id, spouse.id].sort().join('|');
+        marriageCenters.set(key, {
+          x: (x1 + x2) / 2,
+          y: (y1 + y2) / 2
+        });
+      });
+
+      const familyGroups = new Map();
+
+      state.characters.forEach((child) => {
+        const fatherId = child.father && byId[child.father] ? child.father : '';
+        const motherId = child.mother && byId[child.mother] ? child.mother : '';
+        if (!fatherId && !motherId) return;
+
+        const key = `${fatherId}|${motherId}`;
+        if (!familyGroups.has(key)) {
+          familyGroups.set(key, {
+            father: fatherId ? byId[fatherId] : null,
+            mother: motherId ? byId[motherId] : null,
+            children: []
+          });
         }
+        familyGroups.get(key).children.push(child);
+      });
+
+      familyGroups.forEach((group) => {
+        const { father, mother, children } = group;
+        if (!children.length) return;
+
+        const childPoints = children.map((child) => ({
+          child,
+          x: screenX(child.x + CARD_WIDTH / 2),
+          y: screenY(child.y)
+        })).sort((a, b) => a.x - b.x);
+
+        const topChildY = Math.min(...childPoints.map((p) => p.y));
+        let originX = 0;
+        let originY = 0;
+
+        if (father && mother) {
+          const marriageKey = [father.id, mother.id].sort().join('|');
+          const marriageCenter = marriageCenters.get(marriageKey);
+
+          if (marriageCenter) {
+            originX = marriageCenter.x;
+            originY = marriageCenter.y + 10 * zoom;
+          } else {
+            const fx = screenX(father.x + CARD_WIDTH / 2);
+            const fy = screenY(father.y + CARD_HEIGHT / 2);
+            const mx = screenX(mother.x + CARD_WIDTH / 2);
+            const my = screenY(mother.y + CARD_HEIGHT / 2);
+
+            // For unmarried parents, still show the gold partner link
+            // and anchor the children to its center so the branch does not sag.
+            appendMarriageCurve(fx, fy, mx, my);
+
+            originX = (fx + mx) / 2;
+            originY = (fy + my) / 2 + 10 * zoom;
+          }
+
+          if (childPoints.length === 1) {
+            const childPoint = childPoints[0];
+            appendBloodCurve(originX, originY, childPoint.x, childPoint.y, true, 2.6);
+            return;
+          }
+
+          const hubYBase = originY + 68 * zoom;
+          const hubYMax = topChildY - 26 * zoom;
+          const hubY = Math.min(hubYBase, hubYMax);
+          const safeHubY = Math.max(originY + 24 * zoom, hubY);
+
+          appendBloodLine(originX, originY, originX, safeHubY, false, 2.8);
+          els.lineLayer.appendChild(makeCircle(originX, safeHubY, 3.4, '#71f0a5', 0.95));
+
+          childPoints.forEach(({ x, y }) => {
+            appendBloodCurve(originX, safeHubY, x, y, true, 2.4);
+          });
+          return;
+        }
+
+        const parent = father || mother;
+        if (!parent) return;
+
+        const parentX = screenX(parent.x + CARD_WIDTH / 2);
+        const parentY = screenY(parent.y + CARD_HEIGHT);
+
+        if (childPoints.length === 1) {
+          const childPoint = childPoints[0];
+          appendBloodCurve(parentX, parentY, childPoint.x, childPoint.y, true, 2.6);
+          return;
+        }
+
+        const hubYBase = parentY + 44 * zoom;
+        const hubYMax = topChildY - 22 * zoom;
+        const hubY = Math.min(hubYBase, hubYMax);
+        const safeHubY = Math.max(parentY + 18 * zoom, hubY);
+
+        appendBloodLine(parentX, parentY, parentX, safeHubY, false, 2.8);
+        els.lineLayer.appendChild(makeCircle(parentX, safeHubY, 3.4, '#71f0a5', 0.95));
+
+        childPoints.forEach(({ x, y }) => {
+          appendBloodCurve(parentX, safeHubY, x, y, true, 2.4);
+        });
       });
     }
     function renderQuickEdit() {
