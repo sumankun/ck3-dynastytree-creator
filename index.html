@@ -177,9 +177,12 @@
     .drag-pill { border-radius: 999px; border: 1px solid rgba(140,106,73,.7); padding: 4px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .2em; color: #e6cf9f; }
     .edit-btn {
       position: absolute; right: 12px; top: 12px; z-index: 3; width: 32px; height: 32px;
-      display: grid; place-items: center; border-radius: 999px; border: 1px solid rgba(140,106,73,.7);
+      display: flex; align-items: center; justify-content: center; padding: 0;
+      border-radius: 999px; border: 1px solid rgba(140,106,73,.7);
       background: rgba(19,15,34,.85); color: #ecd8af; cursor: pointer;
+      font-size: 15px; line-height: 1;
     }
+    .edit-btn-icon { display:block; line-height:1; transform: translate(-0.5px, -0.5px); }
     .empty-select {
       border-radius: 32px; border: 1px solid rgba(122,94,64,.6); background: rgba(0,0,0,.16); padding: 28px;
     }
@@ -206,6 +209,29 @@
       border: 1px solid rgba(95,74,51,.7); background: rgba(9,8,17,.65); padding: 8px;
     }
     .db-item { border-radius: 8px; padding: 4px 8px; font-size: 14px; color: #e8d3ac; }
+    .qe-stats-grid { display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:10px; margin-top:14px; }
+    .qe-stat-card { border-radius:16px; border:1px solid rgba(122,94,64,.6); background:rgba(0,0,0,.2); padding:10px 8px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .qe-stat-head { width:100%; display:grid; grid-template-columns:24px 1fr 24px; align-items:center; gap:6px; }
+    .qe-stat-step {
+      width:24px; height:24px; border-radius:999px; display:grid; place-items:center;
+      border:1px solid rgba(201,168,109,.28); background:rgba(255,255,255,.03);
+      font-size:14px; line-height:1; font-weight:700; color:#e9d7b2; cursor:pointer;
+      padding:0; transition:transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .qe-stat-step:hover { transform:scale(1.06); }
+    .qe-stat-step.minus { color:#efb0b0; border-color:rgba(184,94,94,.42); background:rgba(120,34,34,.16); }
+    .qe-stat-step.plus { color:#b7ebbb; border-color:rgba(88,160,98,.42); background:rgba(34,92,48,.16); }
+    .qe-stat-icon { width:34px; height:34px; border-radius:999px; display:grid; place-items:center; border:1px solid rgba(201,168,109,.45); background:rgba(255,255,255,.04); font-size:17px; line-height:1; justify-self:center; }
+    .qe-stat-label { font-size:10px; line-height:1.1; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); text-align:center; }
+    .qe-stat-input { width:100%; min-width:0; text-align:center; padding:10px 6px; -moz-appearance:textfield; appearance:textfield; }
+    .qe-stat-input::-webkit-outer-spin-button,
+    .qe-stat-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+    .qe-toggle-row {
+      margin-top: 14px; display:flex; align-items:center; gap:10px; border-radius:16px;
+      border:1px solid rgba(122,94,64,.6); background:rgba(0,0,0,.18); padding:12px 14px;
+      color:#f3dfb8; font-size:14px;
+    }
+    .qe-toggle-row input[type="checkbox"] { width:16px; height:16px; flex:0 0 auto; }
   </style>
 </head>
 <body>
@@ -257,7 +283,7 @@
     <div class="modal small">
       <div class="top-row" style="margin-bottom:16px;">
         <div>
-          <div class="title-top">Quick Edit</div>
+          <div class="title-top">Extra Info</div>
           <div class="title-main" id="quickEditTitle">Unnamed</div>
         </div>
         <button id="closeQuickEditBtn">✕</button>
@@ -692,10 +718,29 @@ akan0002 = {
     }
 
     function getGender(char) { return char && char.gender ? char.gender : 'female'; }
+    const CHARACTER_SKILLS = [
+      { key: 'diplomacy', label: 'Diplomacy', icon: '📜' },
+      { key: 'martial', label: 'Martial', icon: '⚔' },
+      { key: 'stewardship', label: 'Stewardship', icon: '💰' },
+      { key: 'intrigue', label: 'Intrigue', icon: '🗡️' },
+      { key: 'learning', label: 'Learning', icon: '📖' },
+      { key: 'prowess', label: 'Prowess', icon: '💪' },
+    ];
+    function normalizeSkillValue(value) {
+      if (value === '' || value === null || typeof value === 'undefined') return '';
+      const n = Number(String(value).trim());
+      if (!Number.isFinite(n)) return '';
+      return Math.max(0, Math.round(n));
+    }
     function normalizeCharacter(char) {
       const normalized = { ...char };
       normalized.gender = normalized.gender || 'female';
       normalized.dna = normalized.dna || '';
+      normalized.disallow_random_traits = !!normalized.disallow_random_traits;
+      normalized.sexuality = ['none', 'heterosexual', 'bisexual', 'homosexual', 'asexual'].includes(String(normalized.sexuality || '').trim()) ? String(normalized.sexuality || '').trim() : 'none';
+      CHARACTER_SKILLS.forEach(({ key }) => {
+        normalized[key] = normalizeSkillValue(normalized[key]);
+      });
       return normalized;
     }
     function uniqueSorted(values) { return [...new Set(values.map((v) => String(v).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)); }
@@ -952,7 +997,7 @@ akan0002 = {
     function addCharacterAt(x, y) {
       const nextIdBase = `charid_${state.characters.length + 1}`;
       const nextId = state.characters.some((c) => c.id === nextIdBase) ? `${nextIdBase}_${Math.floor(Math.random() * 1000)}` : nextIdBase;
-      const newCharacter = { id: nextId, name: `Character${state.characters.length + 1}`, dynasty: '', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, traits: [], x, y };
+      const newCharacter = { id: nextId, name: `Character${state.characters.length + 1}`, dynasty: '', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, diplomacy: '', martial: '', stewardship: '', intrigue: '', learning: '', prowess: '', traits: [], disallow_random_traits: false, sexuality: 'none', x, y };
       state.characters.push(newCharacter);
       state.selectedId = newCharacter.id;
       state.contextMenu = null;
@@ -1038,7 +1083,7 @@ akan0002 = {
       return blocks.filter((block) => /^[A-Za-z0-9_\.\-]+$/.test(block.id));
     }
     function parseCK3CharacterBlock(rawId, body) {
-      const character = normalizeCharacter({ id: String(rawId || '').trim(), name: '', dynasty: '', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, traits: [], x: 0, y: 0 });
+      const character = normalizeCharacter({ id: String(rawId || '').trim(), name: '', dynasty: '', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, diplomacy: '', martial: '', stewardship: '', intrigue: '', learning: '', prowess: '', traits: [], disallow_random_traits: false, sexuality: 'none', x: 0, y: 0 });
       const lines = String(body || '').replace(/\r\n?/g, '\n').split('\n');
       let depth = 0;
       let currentEventKey = '';
@@ -1083,9 +1128,12 @@ akan0002 = {
           else if (key === 'female') character.gender = /^(yes|true|1)$/i.test(value) ? 'female' : 'male';
           else if (key === 'religion') character.religion = value;
           else if (key === 'culture') character.culture = value;
+          else if (CHARACTER_SKILLS.some((skill) => skill.key === key)) character[key] = normalizeSkillValue(value);
           else if (key === 'father') character.father = value;
           else if (key === 'mother') character.mother = value;
           else if (key === 'trait') character.traits.push(value);
+          else if (key === 'disallow_random_traits') character.disallow_random_traits = /^(yes|true|1)$/i.test(value);
+          else if (key === 'sexuality') character.sexuality = ['heterosexual', 'bisexual', 'homosexual', 'asexual'].includes(value) ? value : 'none';
           continue;
         }
         if (line.includes('{')) depth += (line.match(/\{/g) || []).length;
@@ -1181,9 +1229,14 @@ akan0002 = {
         if (getGender(char) === 'female') lines.push(`	female = yes`);
         lines.push(`	religion = "${escapeCK3String(char.religion || '')}"`);
         lines.push(`	culture = "${escapeCK3String(char.culture || '')}"`);
+        CHARACTER_SKILLS.forEach(({ key }) => {
+          if (char[key] !== '') lines.push(`	${key} = ${char[key]}`);
+        });
         if (char.father) lines.push(`	father = ${char.father}`);
         if (char.mother) lines.push(`	mother = ${char.mother}`);
         char.traits.forEach((trait) => lines.push(`	trait = ${trait}`));
+        if (char.disallow_random_traits) lines.push(`	disallow_random_traits = yes`);
+        if (char.sexuality && char.sexuality !== 'none') lines.push(`	sexuality = ${char.sexuality}`);
         lines.push(`	${birthDate} = {`);
         lines.push(`		birth = yes`);
         lines.push(`	}`);
@@ -1444,7 +1497,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         const div = document.createElement('div');
         div.className = `card ${state.selectedId === character.id ? 'selected' : ''}`;
         div.style.transform = `translate(${state.camera.x + character.x * state.camera.zoom}px, ${state.camera.y + character.y * state.camera.zoom}px) scale(${state.camera.zoom})`;
-        div.innerHTML = `<button class="edit-btn" type="button">✎</button><div class="card-inner"><div class="card-top"><div><div class="card-sub">Character</div><div class="card-name">${escapeHtml(character.name || 'Unnamed')}</div><div class="card-id">${escapeHtml(character.id || 'no_id_yet')}</div></div><button class="sex-badge ${getGender(character) === 'female' ? 'sex-f' : 'sex-m'}" type="button">${getGender(character) === 'female' ? 'F' : 'M'}</button></div><div class="card-stats"><div class="stat"><div class="stat-title">Dynasty</div><div class="stat-value">${escapeHtml(character.dynasty || '—')}</div></div><div class="stat"><div class="stat-title">Birth</div><div class="stat-value">${escapeHtml(character.birthDate || '—')}</div></div></div><div class="card-line"><span style="color:#8cffb6;">👥</span><span>${character.father || character.mother ? 'Blood links' : 'No parents set'}</span></div><div class="card-line small-gap"><span style="color:#ffd25f;">❤</span><span>${escapeHtml(character.spouse || 'No spouse set')}</span></div><div class="card-bottom"><div class="traits-preview">${escapeHtml(character.traits.slice(0, 2).join(', ') || 'No traits')}</div><div class="drag-pill">Drag</div></div></div>`;
+        div.innerHTML = `<button class="edit-btn" type="button" aria-label="Open extra info"><span class="edit-btn-icon">✎</span></button><div class="card-inner"><div class="card-top"><div><div class="card-sub">Character</div><div class="card-name">${escapeHtml(character.name || 'Unnamed')}</div><div class="card-id">${escapeHtml(character.id || 'no_id_yet')}</div></div><button class="sex-badge ${getGender(character) === 'female' ? 'sex-f' : 'sex-m'}" type="button">${getGender(character) === 'female' ? 'F' : 'M'}</button></div><div class="card-stats"><div class="stat"><div class="stat-title">Dynasty</div><div class="stat-value">${escapeHtml(character.dynasty || '—')}</div></div><div class="stat"><div class="stat-title">Birth</div><div class="stat-value">${escapeHtml(character.birthDate || '—')}</div></div></div><div class="card-line"><span style="color:#8cffb6;">👥</span><span>${character.father || character.mother ? 'Blood links' : 'No parents set'}</span></div><div class="card-line small-gap"><span style="color:#ffd25f;">❤</span><span>${escapeHtml(character.spouse || 'No spouse set')}</span></div><div class="card-bottom"><div class="traits-preview">${escapeHtml(character.traits.slice(0, 2).join(', ') || 'No traits')}</div><div class="drag-pill">Drag</div></div></div>`;
         div.onclick = (e) => {
           e.stopPropagation();
           if (state.selectedId !== character.id) commitActiveEditorField();
@@ -1691,17 +1744,28 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       if (!char) { els.quickEditModal.style.display = 'none'; return; }
       els.quickEditTitle.textContent = char.name || 'Unnamed';
       els.quickEditModal.style.display = 'grid';
-      const cultureOptions = uniqueSorted([...state.cultures, ...state.characters.map((c) => c.culture)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
-      const religionOptions = uniqueSorted([...state.religions, ...state.characters.map((c) => c.religion)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
-      els.quickEditBody.innerHTML = `<div class="grid-2"><div class="field"><label>Id</label><input id="qe-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="qe-dna" value="${escapeHtml(char.dna || '')}"></div><div class="field"><label>Name</label><input id="qe-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Birth date</label><input id="qe-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label>Death date</label><input id="qe-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div><div class="field"><label>Culture</label><input id="qe-culture" list="qe-culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="qe-religion" list="qe-religion-list" value="${escapeHtml(char.religion)}"></div></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;margin-top:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="qe-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label><datalist id="qe-culture-list">${cultureOptions}</datalist><datalist id="qe-religion-list">${religionOptions}</datalist>`;
-      bindValueInput('qe-id', (v) => updateCharacterById(char.id, { id: String(v).trim() }), 'blur');
-      bindValueInput('qe-dna', (v) => updateCharacterById(char.id, { dna: String(v).trim() }), 'blur');
-      bindValueInput('qe-name', (v) => updateCharacterById(char.id, { name: v }), 'blur');
-      bindValueInput('qe-birth', (v) => updateCharacterById(char.id, { birthDate: String(v).trim() }), 'blur');
-      bindValueInput('qe-death', (v) => updateCharacterById(char.id, { deathDate: String(v).trim() }), 'blur');
-      bindValueInput('qe-culture', (v) => updateCharacterById(char.id, { culture: v }), 'blur');
-      bindValueInput('qe-religion', (v) => updateCharacterById(char.id, { religion: v }), 'blur');
-      bindValueInput('qe-matrilineal', (v) => updateCharacterById(char.id, { matrilineal: !!v }), 'change');
+      const skillFields = CHARACTER_SKILLS.map(({ key, label, icon }) => `<div class="qe-stat-card"><div class="qe-stat-head"><button type="button" class="qe-stat-step minus" data-skill-step="${key}" data-delta="-1" aria-label="Decrease ${escapeHtml(label)}">−</button><div class="qe-stat-icon" title="${escapeHtml(label)}">${icon}</div><button type="button" class="qe-stat-step plus" data-skill-step="${key}" data-delta="1" aria-label="Increase ${escapeHtml(label)}">+</button></div><input id="qe-${key}" class="qe-stat-input" type="number" min="0" step="1" inputmode="numeric" placeholder="—" value="${escapeHtml(char[key] === '' ? '' : String(char[key]))}"></div>`).join('');
+      els.quickEditBody.innerHTML = `<div class="qe-stats-grid">${skillFields}</div><label class="qe-toggle-row"><input id="qe-disallow-random-traits" type="checkbox" ${char.disallow_random_traits ? 'checked' : ''}><span>Disallow random traits</span></label><div class="field" style="margin-top:14px;"><label for="qe-sexuality">Sexuality</label><select id="qe-sexuality"><option value="none" ${char.sexuality === 'none' ? 'selected' : ''}>none</option><option value="heterosexual" ${char.sexuality === 'heterosexual' ? 'selected' : ''}>heterosexual</option><option value="bisexual" ${char.sexuality === 'bisexual' ? 'selected' : ''}>bisexual</option><option value="homosexual" ${char.sexuality === 'homosexual' ? 'selected' : ''}>homosexual</option><option value="asexual" ${char.sexuality === 'asexual' ? 'selected' : ''}>asexual</option></select></div>`;
+      CHARACTER_SKILLS.forEach(({ key }) => {
+        bindValueInput(`qe-${key}`, (v) => updateCharacterById(char.id, { [key]: normalizeSkillValue(v) }), 'blur');
+      });
+      bindValueInput('qe-disallow-random-traits', (v) => updateCharacterById(char.id, { disallow_random_traits: !!v }), 'change');
+      bindValueInput('qe-sexuality', (v) => updateCharacterById(char.id, { sexuality: ['none', 'heterosexual', 'bisexual', 'homosexual', 'asexual'].includes(v) ? v : 'none' }), 'change');
+      els.quickEditBody.querySelectorAll('[data-skill-step]').forEach((btn) => {
+        btn.onmousedown = (e) => e.stopPropagation();
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const key = btn.dataset.skillStep;
+          const delta = Number(btn.dataset.delta || 0);
+          const input = document.getElementById(`qe-${key}`);
+          if (!input) return;
+          const currentRaw = input.value.trim();
+          const current = currentRaw === '' ? 0 : Number(currentRaw);
+          const next = Math.max(0, (Number.isFinite(current) ? current : 0) + delta);
+          input.value = String(next);
+          updateCharacterById(char.id, { [key]: next });
+        };
+      });
     }
     function renderExportModal() {
       els.exportModal.style.display = state.exportOpen ? 'grid' : 'none';
