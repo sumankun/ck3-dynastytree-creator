@@ -222,6 +222,7 @@
           <button id="saveJsonBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">💾 Save JSON</button>
           <label class="fake-label" for="loadJsonInput" style="padding:6px 8px;font-size:12px;border-radius:12px;">📂 Load JSON</label>
           <input id="loadJsonInput" type="file" accept="application/json" hidden />
+          <button id="pasteCk3Btn" style="padding:6px 8px;font-size:12px;border-radius:12px;">📥 Import ck3 character</button>
           <button id="exportBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">📄 Export</button>
           <button id="newProjectBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">➕ New Project</button>
         </div>
@@ -264,6 +265,51 @@
       <div id="quickEditBody"></div>
     </div>
   </div>
+  <div id="pasteCk3Modal" class="modal-backdrop" style="display:none;">
+    <div class="modal small">
+      <div class="top-row" style="margin-bottom:16px;align-items:center;">
+        <div>
+          <div class="title-top">Import ck3 character</div>
+          <div class="title-main">Import from CK3 code</div>
+        </div>
+        <button id="closePasteCk3Btn">✕</button>
+      </div>
+      <div class="stack">
+        <div class="status" style="font-size:12px;line-height:1.5;">Paste one or more CK3 character blocks. Supported fields: id, name, dynasty, dna, female, religion, culture, father, mother, repeated trait lines, birth/death dated blocks, and spouse events.</div>
+        <textarea id="pasteCk3Textarea" style="width:100%;min-height:340px;border-radius:18px;border:1px solid rgba(95,74,51,.7);background:#090811;padding:16px;color:#f3dfb8;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;font-size:13px;line-height:1.65;outline:none;box-sizing:border-box;" placeholder="example:
+akan0001 = {
+    name = &quot;Manu&quot;
+    dynasty = akandyn002
+    religion = akom_pagan
+    culture = akan
+    841.1.1 = {
+        birth = yes
+    }
+    889.1.1 = {
+        death = yes
+    }
+}
+akan0002 = {
+    name = &quot;Efua&quot;
+    female = yes
+    dynasty = akandyn002
+    religion = akom_pagan
+    culture = akan
+    father = akan0001
+    860.1.1 = {
+        birth = yes
+    }
+    920.1.1 = {
+        death = yes
+    }
+}"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+          <button id="cancelPasteCk3Btn">Cancel</button>
+          <button class="accent" id="importPasteCk3Btn">➕ Add characters</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="exportModal" class="modal-backdrop" style="display:none;">
     <div class="modal">
       <div class="top-row" style="margin-bottom:16px;">
@@ -299,6 +345,7 @@
       draggingNodeId: null,
       panning: false,
       exportOpen: false,
+      pasteCk3Open: false,
     };
     const els = {
       validationPanel: document.getElementById("validationPanel"),
@@ -315,6 +362,8 @@
       quickEditModal: document.getElementById("quickEditModal"),
       quickEditTitle: document.getElementById("quickEditTitle"),
       quickEditBody: document.getElementById("quickEditBody"),
+      pasteCk3Modal: document.getElementById("pasteCk3Modal"),
+      pasteCk3Textarea: document.getElementById("pasteCk3Textarea"),
       loadJsonInput: document.getElementById("loadJsonInput"),
       searchInput: document.getElementById("searchInput"),
       createHereBtn: document.getElementById("createHereBtn"),
@@ -445,6 +494,194 @@
       state.religions = [];
       render();
     }
+
+    function stripInlineComment(line) {
+      let inQuotes = false;
+      let escaped = false;
+      for (let i = 0; i < line.length; i += 1) {
+        const ch = line[i];
+        if (escaped) { escaped = false; continue; }
+        if (ch === '\\') { escaped = true; continue; }
+        if (ch === '"') { inQuotes = !inQuotes; continue; }
+        if (ch === '#' && !inQuotes) return line.slice(0, i);
+      }
+      return line;
+    }
+    function unquoteCK3Value(value) {
+      const trimmed = String(value || '').trim();
+      if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        return trimmed.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+      }
+      return trimmed;
+    }
+    function extractTopLevelCK3Blocks(text) {
+      const source = String(text || '').replace(/\r\n?/g, '\n');
+      const blocks = [];
+      let i = 0;
+      while (i < source.length) {
+        while (i < source.length && /\s/.test(source[i])) i += 1;
+        if (i >= source.length) break;
+        const idStart = i;
+        while (i < source.length && source[i] !== '=' && source[i] !== '\n' && source[i] !== '{') i += 1;
+        if (i >= source.length || source[i] !== '=') { i += 1; continue; }
+        const rawId = source.slice(idStart, i).trim();
+        i += 1;
+        while (i < source.length && /\s/.test(source[i])) i += 1;
+        if (source[i] !== '{') continue;
+        const bodyStart = i;
+        let depth = 0;
+        let inQuotes = false;
+        let escaped = false;
+        for (; i < source.length; i += 1) {
+          const ch = source[i];
+          if (escaped) { escaped = false; continue; }
+          if (ch === '\\') { escaped = true; continue; }
+          if (ch === '"') { inQuotes = !inQuotes; continue; }
+          if (inQuotes) continue;
+          if (ch === '{') depth += 1;
+          else if (ch === '}') {
+            depth -= 1;
+            if (depth === 0) {
+              blocks.push({ id: rawId, body: source.slice(bodyStart + 1, i) });
+              i += 1;
+              break;
+            }
+          }
+        }
+      }
+      return blocks.filter((block) => /^[A-Za-z0-9_\.\-]+$/.test(block.id));
+    }
+    function parseCK3CharacterBlock(rawId, body) {
+      const character = normalizeCharacter({ id: String(rawId || '').trim(), name: '', dynasty: '', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, traits: [], x: 0, y: 0 });
+      const lines = String(body || '').replace(/\r\n?/g, '\n').split('\n');
+      let depth = 0;
+      let currentEventKey = '';
+      const isDateLike = (key) => /^\d{1,4}\.\d{1,2}\.\d{1,2}$/.test(key);
+      for (const rawLine of lines) {
+        const line = stripInlineComment(rawLine).trim();
+        if (!line) continue;
+        if (depth === 0) {
+          const singleLineEvent = line.match(/^([^=\s]+)\s*=\s*\{\s*([^}]*)\s*\}$/);
+          if (singleLineEvent && isDateLike(singleLineEvent[1].trim())) {
+            const eventDate = singleLineEvent[1].trim();
+            const eventBody = singleLineEvent[2].trim();
+            if (/\bbirth\s*=\s*yes\b/i.test(eventBody)) character.birthDate = eventDate;
+            if (/\bdeath\s*=\s*yes\b/i.test(eventBody)) character.deathDate = eventDate;
+            const matri = eventBody.match(/\badd_matrilineal_spouse\s*=\s*([A-Za-z0-9_\.\-]+)/i);
+            const spouse = eventBody.match(/\badd_spouse\s*=\s*([A-Za-z0-9_\.\-]+)/i);
+            if (matri) {
+              character.spouse = matri[1];
+              character.marriageDate = eventDate;
+              character.matrilineal = true;
+            } else if (spouse) {
+              character.spouse = spouse[1];
+              character.marriageDate = eventDate;
+              character.matrilineal = false;
+            }
+            continue;
+          }
+          const eventStart = line.match(/^([^=\s]+)\s*=\s*\{$/);
+          if (eventStart && isDateLike(eventStart[1].trim())) {
+            currentEventKey = eventStart[1].trim();
+            depth = 1;
+            continue;
+          }
+          const fieldMatch = line.match(/^([A-Za-z0-9_\.\-]+)\s*=\s*(.+)$/);
+          if (!fieldMatch) continue;
+          const key = fieldMatch[1];
+          const valueRaw = fieldMatch[2].trim();
+          const value = unquoteCK3Value(valueRaw);
+          if (key === 'name') character.name = value;
+          else if (key === 'dynasty') character.dynasty = value;
+          else if (key === 'dna') character.dna = valueRaw;
+          else if (key === 'female') character.gender = /^(yes|true|1)$/i.test(value) ? 'female' : 'male';
+          else if (key === 'religion') character.religion = value;
+          else if (key === 'culture') character.culture = value;
+          else if (key === 'father') character.father = value;
+          else if (key === 'mother') character.mother = value;
+          else if (key === 'trait') character.traits.push(value);
+          continue;
+        }
+        if (line.includes('{')) depth += (line.match(/\{/g) || []).length;
+        if (/^birth\s*=\s*yes$/i.test(line) && currentEventKey) character.birthDate = currentEventKey;
+        if (/^death\s*=\s*yes$/i.test(line) && currentEventKey) character.deathDate = currentEventKey;
+        const matriMatch = line.match(/^add_matrilineal_spouse\s*=\s*([A-Za-z0-9_\.\-]+)$/i);
+        const spouseMatch = line.match(/^add_spouse\s*=\s*([A-Za-z0-9_\.\-]+)$/i);
+        if (matriMatch && currentEventKey) {
+          character.spouse = matriMatch[1];
+          character.marriageDate = currentEventKey;
+          character.matrilineal = true;
+        }
+        if (spouseMatch && currentEventKey) {
+          character.spouse = spouseMatch[1];
+          character.marriageDate = currentEventKey;
+          character.matrilineal = false;
+        }
+        if (line.includes('}')) {
+          depth -= (line.match(/\}/g) || []).length;
+          if (depth <= 0) {
+            depth = 0;
+            currentEventKey = '';
+          }
+        }
+      }
+      return character;
+    }
+    function makeUniqueCharacterId(baseId, takenIds) {
+      const clean = String(baseId || '').trim() || 'imported_character';
+      if (!takenIds.has(clean)) {
+        takenIds.add(clean);
+        return clean;
+      }
+      let index = 2;
+      while (takenIds.has(`${clean}_${index}`)) index += 1;
+      const nextId = `${clean}_${index}`;
+      takenIds.add(nextId);
+      return nextId;
+    }
+    function importCK3Characters(text) {
+      const blocks = extractTopLevelCK3Blocks(text);
+      if (!blocks.length) throw new Error('No CK3 character blocks found.');
+      const imported = blocks.map((block) => parseCK3CharacterBlock(block.id, block.body)).filter((char) => char.id);
+      if (!imported.length) throw new Error('No valid characters could be parsed.');
+      const takenIds = new Set(state.characters.map((c) => c.id));
+      const importedOriginalIds = new Set(imported.map((c) => c.id));
+      const idMap = new Map();
+      imported.forEach((char) => { idMap.set(char.id, makeUniqueCharacterId(char.id, takenIds)); });
+      const rect = els.stage.getBoundingClientRect();
+      const worldCenterX = (rect.width / 2 - state.camera.x) / state.camera.zoom;
+      const worldCenterY = (rect.height / 2 - state.camera.y) / state.camera.zoom;
+      const columns = Math.max(1, Math.ceil(Math.sqrt(imported.length)));
+      const xGap = 300;
+      const yGap = 220;
+      const startX = worldCenterX - ((Math.min(columns, imported.length) - 1) * xGap) / 2;
+      const startY = worldCenterY - (Math.floor((imported.length - 1) / columns) * yGap) / 2;
+      const added = imported.map((char, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        const remapRef = (value) => importedOriginalIds.has(value) ? idMap.get(value) : value;
+        return normalizeCharacter({
+          ...char,
+          id: idMap.get(char.id),
+          father: remapRef(char.father || ''),
+          mother: remapRef(char.mother || ''),
+          spouse: remapRef(char.spouse || ''),
+          traits: Array.isArray(char.traits) ? [...char.traits] : [],
+          x: startX + col * xGap,
+          y: startY + row * yGap,
+        });
+      });
+      state.characters = state.characters.concat(added);
+      state.cultures = uniqueSorted([...state.cultures, ...added.map((c) => c.culture)]);
+      state.religions = uniqueSorted([...state.religions, ...added.map((c) => c.religion)]);
+      state.selectedId = added[0] ? added[0].id : state.selectedId;
+      state.quickEditId = null;
+      state.pasteCk3Open = false;
+      if (els.pasteCk3Textarea) els.pasteCk3Textarea.value = '';
+      render();
+      return added;
+    }
+
     function generateCK3Code(characters) {
       return characters.map((char) => {
         const lines = [];
@@ -879,6 +1116,9 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       els.exportModal.style.display = state.exportOpen ? 'grid' : 'none';
       els.exportTextarea.value = generateCK3Code(state.characters);
     }
+    function renderPasteCk3Modal() {
+      els.pasteCk3Modal.style.display = state.pasteCk3Open ? 'grid' : 'none';
+    }
     function render() {
       if (els.searchInput) els.searchInput.value = state.search;
       renderValidation();
@@ -888,6 +1128,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       renderLines();
       renderQuickEdit();
       renderExportModal();
+      renderPasteCk3Modal();
       els.saveStatus.style.display = state.saveStatus ? 'block' : 'none';
       els.saveStatus.textContent = state.saveStatus;
       els.contextMenu.style.display = state.contextMenu ? 'block' : 'none';
@@ -897,12 +1138,29 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       }
     }
     document.getElementById('saveJsonBtn').onclick = saveProjectJson;
+    document.getElementById('pasteCk3Btn').onclick = () => { state.pasteCk3Open = true; render(); if (els.pasteCk3Textarea) setTimeout(() => els.pasteCk3Textarea.focus(), 0); };
     document.getElementById('exportBtn').onclick = () => { state.exportOpen = true; render(); };
     document.getElementById('newProjectBtn').onclick = createNewProject;
     document.getElementById('toggleDatabaseBtn').onclick = () => { state.databaseOpen = !state.databaseOpen; render(); };
     document.getElementById('zoomInBtn').onclick = () => { state.camera.zoom = clampZoom(state.camera.zoom + 0.1); render(); };
     document.getElementById('zoomOutBtn').onclick = () => { state.camera.zoom = clampZoom(state.camera.zoom - 0.1); render(); };
     document.getElementById('closeQuickEditBtn').onclick = () => { state.quickEditId = null; render(); };
+    document.getElementById('closePasteCk3Btn').onclick = () => { state.pasteCk3Open = false; render(); };
+    document.getElementById('cancelPasteCk3Btn').onclick = () => { state.pasteCk3Open = false; render(); };
+    document.getElementById('importPasteCk3Btn').onclick = () => {
+      const value = els.pasteCk3Textarea ? els.pasteCk3Textarea.value : '';
+      if (!value.trim()) {
+        alert('Paste CK3 character code first.');
+        return;
+      }
+      try {
+        const added = importCK3Characters(value);
+        setStatus(`Imported ${added.length} character${added.length === 1 ? '' : 's'}`);
+      } catch (error) {
+        console.error(error);
+        alert(error && error.message ? error.message : 'Could not import CK3 character code.');
+      }
+    };
     document.getElementById('closeExportBtn').onclick = () => { state.exportOpen = false; render(); };
     document.getElementById('copyExportBtn').onclick = () => { if (navigator.clipboard) navigator.clipboard.writeText(els.exportTextarea.value); };
     document.getElementById('downloadExportBtn').onclick = () => fallbackDownload(els.exportTextarea.value, 'ck3_characters.txt', 'text/plain;charset=utf-8');
@@ -957,6 +1215,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
     els.stage.onclick = () => { state.contextMenu = null; render(); };
     els.createHereBtn.onclick = () => { if (state.contextMenu) addCharacterAt(state.contextMenu.worldX, state.contextMenu.worldY); };
     els.quickEditModal.onclick = (e) => { if (e.target === els.quickEditModal) { state.quickEditId = null; render(); } };
+    els.pasteCk3Modal.onclick = (e) => { if (e.target === els.pasteCk3Modal) { state.pasteCk3Open = false; render(); } };
     els.exportModal.onclick = (e) => { if (e.target === els.exportModal) { state.exportOpen = false; render(); } };
     render();
   </script>
