@@ -331,6 +331,305 @@ akan0002 = {
   <script>
     const CARD_WIDTH = 250;
     const CARD_HEIGHT = 168;
+    const DEFAULT_TRAITS = [
+      'education_intrigue_1',
+      'education_intrigue_2',
+      'education_intrigue_3',
+      'education_intrigue_4',
+      'education_intrigue_5',
+      'education_diplomacy_1',
+      'education_diplomacy_2',
+      'education_diplomacy_3',
+      'education_diplomacy_4',
+      'education_diplomacy_5',
+      'education_stewardship_1',
+      'education_stewardship_2',
+      'education_stewardship_3',
+      'education_stewardship_4',
+      'education_stewardship_5',
+      'education_martial_1',
+      'education_martial_2',
+      'education_martial_3',
+      'education_martial_4',
+      'education_martial_5',
+      'education_learning_1',
+      'education_learning_2',
+      'education_learning_3',
+      'education_learning_4',
+      'education_learning_5',
+      'diplomat',
+      'family_first',
+      'august',
+      'lifestyle_reveler',
+      'lifestyle_blademaster',
+      'lifestyle_hunter',
+      'strategist',
+      'overseer',
+      'gallant',
+      'architect',
+      'administrator',
+      'avaricious',
+      'schemer',
+      'seducer',
+      'torturer',
+      'whole_of_body',
+      'scholar',
+      'theologian',
+      'lifestyle_mystic',
+      'lifestyle_physician',
+      'lifestyle_herbalist',
+      'lifestyle_gardener',
+      'lustful',
+      'chaste',
+      'gluttonous',
+      'temperate',
+      'greedy',
+      'generous',
+      'lazy',
+      'diligent',
+      'wrathful',
+      'calm',
+      'patient',
+      'impatient',
+      'arrogant',
+      'humble',
+      'deceitful',
+      'honest',
+      'craven',
+      'brave',
+      'shy',
+      'gregarious',
+      'ambitious',
+      'content',
+      'arbitrary',
+      'just',
+      'cynical',
+      'zealous',
+      'paranoid',
+      'trusting',
+      'compassionate',
+      'callous',
+      'sadistic',
+      'stubborn',
+      'fickle',
+      'eccentric',
+      'vengeful',
+      'forgiving',
+      'rowdy',
+      'charming',
+      'curious',
+      'pensive',
+      'bossy',
+      'drunkard',
+      'hashishiyah',
+      'rakish',
+      'reclusive',
+      'irritable',
+      'flagellant',
+      'profligate',
+      'improvident',
+      'contrite',
+      'comfort_eater',
+      'inappetetic',
+      'journaller',
+      'confider',
+      'athletic',
+      'pregnant',
+      'depressed_1',
+      'depressed_genetic',
+      'lunatic_1',
+      'lunatic_genetic',
+      'possessed_1',
+      'possessed_genetic',
+      'ill',
+      'pneumonic',
+      'great_pox',
+      'early_great_pox',
+      'lovers_pox',
+      'leper',
+      'wounded_1',
+      'wounded_2',
+      'wounded_3',
+      'maimed',
+      'one_eyed',
+      'one_legged',
+      'disfigured',
+      'infirm',
+      'incapable',
+      'gout_ridden',
+      'consumption',
+      'cancer',
+      'typhus',
+      'bubonic_plague',
+      'smallpox',
+      'measles',
+      'dysentery',
+      'ergotism',
+      'sickly',
+      'scarred',
+      'eunuch_1',
+      'beardless_eunuch',
+      'blind',
+      'beauty_bad_1',
+      'beauty_bad_2',
+      'beauty_bad_3',
+      'beauty_good_1',
+      'beauty_good_2',
+      'beauty_good_3',
+      'intellect_bad_1',
+      'intellect_bad_2',
+      'intellect_bad_3',
+      'intellect_good_1',
+      'intellect_good_2',
+      'intellect_good_3',
+      'physique_bad_1',
+      'physique_bad_2',
+      'physique_bad_3',
+      'physique_good_1',
+      'physique_good_2',
+      'physique_good_3',
+      'pure_blooded',
+      'fecund',
+      'strong',
+      'shrewd',
+      'clubfooted',
+      'hunchbacked',
+      'lisping',
+      'stuttering',
+      'dwarf',
+      'giant',
+      'inbred',
+      'weak',
+      'dull',
+      'impotent',
+      'spindly',
+      'scaly',
+      'albino',
+      'wheezing',
+      'bleeder',
+      'infertile',
+      'celibate',
+      'pilgrim',
+      'hajjaj',
+      'excommunicated',
+      'devoted',
+      'sayyid',
+      'saoshyant',
+      'saoshyant_descendant',
+      'savior',
+      'divine_blood',
+      'blood_of_prophet',
+      'faith_warrior',
+      'saint',
+      'historical_character',
+      'legend',
+      'order_member',
+      'berserker',
+      'shieldmaiden',
+      'varangian',
+      'lifestyle_poet',
+      'bastard',
+      'legitimized_bastard',
+      'disputed_heritage',
+      'child_of_concubine_female',
+      'child_of_concubine_male',
+      'wild_oat',
+      'bastard_founder',
+      'twin',
+      'kinslayer_1',
+      'kinslayer_2',
+      'kinslayer_3',
+      'deviant',
+      'cannibal',
+      'sodomite',
+      'incestuous',
+      'adulterer',
+      'fornicator',
+      'murderer',
+      'born_in_the_purple',
+      'augustus',
+      'viking',
+      'reincarnation',
+      'adventurer',
+      'adventurer_follower',
+      'heresiarch',
+      'peasant_leader',
+      'populist_leader',
+      'witch',
+      'disinherited',
+      'denounced',
+      'decadent',
+      'extolled',
+      'gallivanter',
+      'loyal',
+      'disloyal',
+      'gallowsbait',
+      'logistician',
+      'military_engineer',
+      'aggressive_attacker',
+      'unyielding_defender',
+      'forder',
+      'flexible_leader',
+      'desert_warrior',
+      'jungle_stalker',
+      'reaver',
+      'reckless',
+      'holy_warrior',
+      'open_terrain_expert',
+      'rough_terrain_expert',
+      'forest_fighter',
+      'cautious_leader',
+      'organizer',
+      'winter_soldier',
+      'crusader_king',
+      'chakravarti',
+      'greatest_of_khans',
+      'conqueror',
+      'paragon',
+      'consecrated_blood',
+      'education_martial_prowess_1',
+      'education_martial_prowess_2',
+      'education_martial_prowess_3',
+      'education_martial_prowess_4',
+      'diplomatic_court_1',
+      'diplomatic_court_2',
+      'warlike_court_1',
+      'warlike_court_2',
+      'administrative_court_1',
+      'administrative_court_2',
+      'intrigue_court_1',
+      'intrigue_court_2',
+      'scholarly_court_1',
+      'scholarly_court_2',
+      'education_republican_knowledge_1',
+      'education_republican_knowledge_2',
+      'education_republican_knowledge_3',
+      'education_republican_knowledge_4',
+      'tourney_participant',
+      'lifestyle_traveler',
+      'fp3_struggle_detractor',
+      'fp3_struggle_supporter',
+      'charioteer_blue',
+      'charioteer_green',
+      'charioteer_white',
+      'charioteer_red',
+      'governor',
+      'despoiler_of_byzantium',
+      'campeador',
+      'violet_poet',
+      'knight_errant',
+      'the_wake',
+      'immortal',
+      'lifestyle_wayfarer',
+      'lifestyle_voyager',
+      'lifestyle_surveyor',
+      'nomadic_philosophy',
+      'lifestyle_seasoned_pastor',
+      'golden_lineage',
+      'confucian_education',
+      'former_emperor',
+      'burdened',
+    ];
     const state = {
       characters: [],
       selectedId: null,
@@ -340,6 +639,9 @@ akan0002 = {
       databaseOpen: false,
       cultures: [],
       religions: [],
+      traits: [...DEFAULT_TRAITS],
+      traitDbSearch: "",
+      traitDbSelected: "",
       saveStatus: "",
       contextMenu: null,
       draggingNodeId: null,
@@ -400,6 +702,186 @@ akan0002 = {
     function escapeHtml(text) { return String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
     function parseTraits(text) { return text.split('\n').map((t) => t.trim()).filter(Boolean); }
     function formatTraitsForTextarea(traits) { return traits.join('\n'); }
+    function getAllTraitOptions() {
+      return uniqueSorted([
+        ...state.traits,
+        ...state.characters.flatMap((c) => Array.isArray(c.traits) ? c.traits : [])
+      ]);
+    }
+    function getTextareaCurrentLineInfo(textarea) {
+      const value = textarea.value || '';
+      const start = textarea.selectionStart || 0;
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+      const nextNl = value.indexOf('\n', start);
+      const lineEnd = nextNl === -1 ? value.length : nextNl;
+      const lineText = value.slice(lineStart, lineEnd);
+      return { lineStart, lineEnd, lineText, caret: start };
+    }
+    function replaceTextareaCurrentLine(textarea, nextLineValue, moveCaretToEnd = true) {
+      const { lineStart, lineEnd } = getTextareaCurrentLineInfo(textarea);
+      const value = textarea.value || '';
+      textarea.value = value.slice(0, lineStart) + nextLineValue + value.slice(lineEnd);
+      if (moveCaretToEnd) {
+        const pos = lineStart + nextLineValue.length;
+        textarea.setSelectionRange(pos, pos);
+      }
+    }
+    function uniquePreserveOrder(values) { return [...new Set(values.map((v) => String(v).trim()).filter(Boolean))]; }
+    function normalizeTraitListFromTextarea(text) { return uniquePreserveOrder(parseTraits(text)); }
+    function commitTraitsFromTextarea(textarea, options = {}) {
+      const traits = normalizeTraitListFromTextarea(textarea.value);
+      const char = selectedCharacter();
+      if (!char) return;
+      state.traits = uniqueSorted([...state.traits, ...traits]);
+      const next = { ...char, traits };
+      const idx = state.characters.findIndex((c) => c.id === char.id);
+      if (idx !== -1) state.characters[idx] = next;
+      if (options.render !== false) render();
+    }
+    function ensureTraitAutocompleteUi() {
+      let box = document.getElementById('trait-suggest-box');
+      if (box) return box;
+      box = document.createElement('div');
+      box.id = 'trait-suggest-box';
+      box.style.position = 'fixed';
+      box.style.zIndex = '9999';
+      box.style.minWidth = '240px';
+      box.style.maxWidth = '420px';
+      box.style.maxHeight = '220px';
+      box.style.overflowY = 'auto';
+      box.style.borderRadius = '14px';
+      box.style.border = '1px solid rgba(122,94,64,.75)';
+      box.style.background = 'linear-gradient(180deg, rgba(19,15,37,.98), rgba(8,8,18,.98))';
+      box.style.boxShadow = '0 18px 40px rgba(0,0,0,.45)';
+      box.style.padding = '6px';
+      box.style.display = 'none';
+      document.body.appendChild(box);
+      return box;
+    }
+    function hideTraitSuggestions() {
+      const box = document.getElementById('trait-suggest-box');
+      if (box) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        box.dataset.index = '0';
+      }
+    }
+    function renderTraitSuggestions(textarea) {
+      const box = ensureTraitAutocompleteUi();
+      const { lineText } = getTextareaCurrentLineInfo(textarea);
+      const query = String(lineText || '').trim().toLowerCase();
+      if (!query) { hideTraitSuggestions(); return []; }
+      const matches = getAllTraitOptions().filter((trait) => trait.toLowerCase().includes(query)).slice(0, 12);
+      if (!matches.length) { hideTraitSuggestions(); return []; }
+      if (matches.some((trait) => trait.toLowerCase() === query)) { hideTraitSuggestions(); return []; }
+      const rect = textarea.getBoundingClientRect();
+      box.style.left = `${rect.left}px`;
+      box.style.top = `${Math.min(window.innerHeight - 240, rect.bottom + 6)}px`;
+      box.style.width = `${Math.min(rect.width, 420)}px`;
+      box.style.display = 'block';
+      box.dataset.index = '0';
+      box.innerHTML = matches.map((trait, index) => `
+        <div
+          class="trait-suggestion-item"
+          data-trait="${escapeHtml(trait)}"
+          data-index="${index}"
+          style="
+            padding:8px 10px;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:13px;
+            color:#f3dfb8;
+            background:${index === 0 ? 'rgba(122,94,64,.25)' : 'transparent'};
+          "
+        >${escapeHtml(trait)}</div>
+      `).join('');
+      [...box.querySelectorAll('.trait-suggestion-item')].forEach((item) => {
+        item.onmouseenter = () => {
+          box.dataset.index = item.dataset.index;
+          refreshTraitSuggestionActiveState();
+        };
+        item.onmousedown = (e) => {
+          e.preventDefault();
+          applyTraitSuggestion(textarea, item.dataset.trait);
+        };
+      });
+      return matches;
+    }
+    function refreshTraitSuggestionActiveState() {
+      const box = document.getElementById('trait-suggest-box');
+      if (!box || box.style.display === 'none') return;
+      const activeIndex = Number(box.dataset.index || 0);
+      [...box.querySelectorAll('.trait-suggestion-item')].forEach((item) => {
+        const isActive = Number(item.dataset.index) === activeIndex;
+        item.style.background = isActive ? 'rgba(122,94,64,.25)' : 'transparent';
+      });
+    }
+    function applyTraitSuggestion(textarea, trait) {
+      const { lineStart } = getTextareaCurrentLineInfo(textarea);
+      replaceTextareaCurrentLine(textarea, trait, false);
+      const caretPos = lineStart + trait.length;
+      textarea.focus();
+      textarea.setSelectionRange(caretPos, caretPos);
+      state.traits = uniqueSorted([...state.traits, trait]);
+      commitTraitsFromTextarea(textarea, { render: false });
+      hideTraitSuggestions();
+    }
+    function bindTraitsAutocomplete(textarea) {
+      if (!textarea) return;
+      textarea.oninput = () => { renderTraitSuggestions(textarea); };
+      textarea.onkeydown = (e) => {
+        const box = ensureTraitAutocompleteUi();
+        const visible = box.style.display !== 'none';
+        const items = [...box.querySelectorAll('.trait-suggestion-item')];
+        if (e.key === 'ArrowDown' && visible && items.length) {
+          e.preventDefault();
+          box.dataset.index = String(Math.min(items.length - 1, Number(box.dataset.index || 0) + 1));
+          refreshTraitSuggestionActiveState();
+          return;
+        }
+        if (e.key === 'ArrowUp' && visible && items.length) {
+          e.preventDefault();
+          box.dataset.index = String(Math.max(0, Number(box.dataset.index || 0) - 1));
+          refreshTraitSuggestionActiveState();
+          return;
+        }
+        if (e.key === 'Enter') {
+          const activeIndex = Number(box.dataset.index || 0);
+          const active = items[activeIndex] || items[0];
+          if (visible && active && active.dataset.trait) {
+            e.preventDefault();
+            applyTraitSuggestion(textarea, active.dataset.trait);
+            return;
+          }
+          e.preventDefault();
+          const { lineText } = getTextareaCurrentLineInfo(textarea);
+          const cleanLine = String(lineText || '').trim();
+          if (cleanLine) state.traits = uniqueSorted([...state.traits, cleanLine]);
+          const value = textarea.value || '';
+          const insertPos = textarea.selectionStart || 0;
+          textarea.value = value.slice(0, insertPos) + '\n' + value.slice(insertPos);
+          const newPos = insertPos + 1;
+          textarea.setSelectionRange(newPos, newPos);
+          commitTraitsFromTextarea(textarea, { render: false });
+          hideTraitSuggestions();
+          textarea.focus();
+          return;
+        }
+        if (e.key === 'Escape') hideTraitSuggestions();
+      };
+      textarea.onblur = () => {
+        setTimeout(() => {
+          const { lineText } = getTextareaCurrentLineInfo(textarea);
+          const cleanLine = String(lineText || '').trim();
+          if (cleanLine) state.traits = uniqueSorted([...state.traits, cleanLine]);
+          commitTraitsFromTextarea(textarea);
+          hideTraitSuggestions();
+        }, 120);
+      };
+      textarea.onfocus = () => { renderTraitSuggestions(textarea); };
+      textarea.onmousedown = (e) => e.stopPropagation();
+      textarea.onclick = (e) => { e.stopPropagation(); renderTraitSuggestions(textarea); };
+    }
     function escapeCK3String(value) { return String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"'); }
     function setStatus(text) {
       state.saveStatus = text;
@@ -415,9 +897,12 @@ akan0002 = {
         ids.set(char.id, (ids.get(char.id) || 0) + 1);
       });
       chars.forEach((char) => {
+        const label = char.id || char.name || 'Character';
         if (char.id && ids.get(char.id) > 1) issues.push({ type: 'error', message: `Duplicate id found: ${char.id}` });
-        if (char.spouse && !char.marriageDate) issues.push({ type: 'warning', message: `${char.id || char.name || 'Character'}: spouse is set but marriage date is empty.` });
-        if (char.deathDate && char.birthDate && char.deathDate === char.birthDate) issues.push({ type: 'warning', message: `${char.id || char.name || 'Character'}: birth and death dates are identical.` });
+        if (!char.birthDate) issues.push({ type: 'warning', message: `${label}: birth date is empty.` });
+        if (!char.deathDate) issues.push({ type: 'warning', message: `${label}: death date is empty.` });
+        if (char.spouse && !char.marriageDate) issues.push({ type: 'warning', message: `${label}: spouse is set but marriage date is empty.` });
+        if (char.deathDate && char.birthDate && char.deathDate === char.birthDate) issues.push({ type: 'warning', message: `${label}: birth and death dates are identical.` });
       });
       return issues;
     }
@@ -465,7 +950,7 @@ akan0002 = {
       updateCharacterById(char.id, patch);
     }
     function addCharacterAt(x, y) {
-      const nextIdBase = `new_character_${state.characters.length + 1}`;
+      const nextIdBase = `charid_${state.characters.length + 1}`;
       const nextId = state.characters.some((c) => c.id === nextIdBase) ? `${nextIdBase}_${Math.floor(Math.random() * 1000)}` : nextIdBase;
       const newCharacter = { id: nextId, name: `Character${state.characters.length + 1}`, dynasty: '', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, traits: [], x, y };
       state.characters.push(newCharacter);
@@ -492,6 +977,7 @@ akan0002 = {
       state.saveStatus = '';
       state.cultures = [];
       state.religions = [];
+      state.traits = [...DEFAULT_TRAITS];
       render();
     }
 
@@ -674,6 +1160,7 @@ akan0002 = {
       state.characters = state.characters.concat(added);
       state.cultures = uniqueSorted([...state.cultures, ...added.map((c) => c.culture)]);
       state.religions = uniqueSorted([...state.religions, ...added.map((c) => c.religion)]);
+      state.traits = uniqueSorted([...state.traits, ...added.flatMap((c) => c.traits || [])]);
       state.selectedId = added[0] ? added[0].id : state.selectedId;
       state.quickEditId = null;
       state.pasteCk3Open = false;
@@ -685,26 +1172,32 @@ akan0002 = {
     function generateCK3Code(characters) {
       return characters.map((char) => {
         const lines = [];
+        const birthDate = String(char.birthDate || '').trim() || '1.1.1';
+        const deathDate = String(char.deathDate || '').trim() || '1.1.2';
         lines.push(`${char.id || 'character_id'} = {`);
-        if (char.name) lines.push(`\tname = "${escapeCK3String(char.name)}"`);
-        if (char.dynasty) lines.push(`\tdynasty = ${char.dynasty}`);
-        if ((char.dna || '').trim()) lines.push(`\tdna = ${(char.dna || '').trim()}`);
-        if (getGender(char) === 'female') lines.push(`\tfemale = yes`);
+        if (char.name) lines.push(`	name = "${escapeCK3String(char.name)}"`);
+        if (char.dynasty) lines.push(`	dynasty = ${char.dynasty}`);
+        if ((char.dna || '').trim()) lines.push(`	dna = ${(char.dna || '').trim()}`);
+        if (getGender(char) === 'female') lines.push(`	female = yes`);
         lines.push(`	religion = "${escapeCK3String(char.religion || '')}"`);
         lines.push(`	culture = "${escapeCK3String(char.culture || '')}"`);
-        if (char.father) lines.push(`\tfather = ${char.father}`);
-        if (char.mother) lines.push(`\tmother = ${char.mother}`);
-        char.traits.forEach((trait) => lines.push(`\ttrait = ${trait}`));
-        if (char.birthDate) { lines.push(`\t${char.birthDate} = {`); lines.push(`\t\tbirth = yes`); lines.push(`\t}`); }
+        if (char.father) lines.push(`	father = ${char.father}`);
+        if (char.mother) lines.push(`	mother = ${char.mother}`);
+        char.traits.forEach((trait) => lines.push(`	trait = ${trait}`));
+        lines.push(`	${birthDate} = {`);
+        lines.push(`		birth = yes`);
+        lines.push(`	}`);
         if (char.spouse && char.marriageDate) {
           const shouldWriteMarriage = getGender(char) === 'female' ? char.matrilineal : !char.matrilineal;
           if (shouldWriteMarriage) {
-            lines.push(`\t${char.marriageDate} = {`);
-            lines.push(`\t\t${char.matrilineal ? 'add_matrilineal_spouse' : 'add_spouse'} = ${char.spouse}`);
-            lines.push(`\t}`);
+            lines.push(`	${char.marriageDate} = {`);
+            lines.push(`		${char.matrilineal ? 'add_matrilineal_spouse' : 'add_spouse'} = ${char.spouse}`);
+            lines.push(`	}`);
           }
         }
-        if (char.deathDate) { lines.push(`\t${char.deathDate} = {`); lines.push(`\t\tdeath = yes`); lines.push(`\t}`); }
+        lines.push(`	${deathDate} = {`);
+        lines.push(`		death = yes`);
+        lines.push(`	}`);
         lines.push(`}`);
         return lines.join('\n');
       }).join('\n');
@@ -722,7 +1215,7 @@ akan0002 = {
       setStatus('Downloaded file');
     }
     function saveProjectJson() {
-      const payload = { version: 1, camera: state.camera, cultures: state.cultures, religions: state.religions, characters: state.characters.map(({ sex, ...char }) => normalizeCharacter(char)) };
+      const payload = { version: 1, camera: state.camera, cultures: state.cultures, religions: state.religions, traits: state.traits, characters: state.characters.map(({ sex, ...char }) => normalizeCharacter(char)) };
       const jsonText = JSON.stringify(payload, null, 2);
       if (window.showSaveFilePicker) {
         window.showSaveFilePicker({ suggestedName: 'ck3_tree_project.json', types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }] })
@@ -745,6 +1238,8 @@ akan0002 = {
         if (parsed.camera) state.camera = parsed.camera;
         if (Array.isArray(parsed.cultures)) state.cultures = uniqueSorted(parsed.cultures);
         if (Array.isArray(parsed.religions)) state.religions = uniqueSorted(parsed.religions);
+        if (Array.isArray(parsed.traits)) state.traits = uniqueSorted(parsed.traits);
+        else state.traits = [...DEFAULT_TRAITS];
         state.selectedId = parsed.characters && parsed.characters[0] ? parsed.characters[0].id : null;
         state.quickEditId = null;
         render();
@@ -783,9 +1278,10 @@ akan0002 = {
         return;
       }
       const idOptions = state.characters.map((c) => c.id).filter(Boolean).sort().map((id) => `<option value="${escapeHtml(id)}"></option>`).join('');
+      const relationIdOptions = state.characters.map((c) => c.id).filter((id) => id && id !== char.id).sort().map((id) => `<option value="${escapeHtml(id)}"></option>`).join('');
       const cultureOptions = uniqueSorted([...state.cultures, ...state.characters.map((c) => c.culture)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
       const religionOptions = uniqueSorted([...state.religions, ...state.characters.map((c) => c.religion)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
-      els.editorHost.innerHTML = `<div class="panel"><div class="top-row" style="margin-bottom:16px;"><div><div class="title-top">Selected</div><div class="title-main">${escapeHtml(char.name || 'Unnamed')}</div></div><button class="danger" id="deleteSelectedBtn">Delete</button></div><datalist id="character-ids-list">${idOptions}</datalist><datalist id="culture-list">${cultureOptions}</datalist><datalist id="religion-list">${religionOptions}</datalist><div class="stack"><div class="grid-2"><div class="field"><label>Character id</label><input id="field-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="field-dna" value="${escapeHtml(char.dna || '')}"></div></div><div class="grid-2"><div class="field"><label>Name</label><input id="field-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Gender</label><select id="field-gender"><option value="female" ${getGender(char) === 'female' ? 'selected' : ''}>Female</option><option value="male" ${getGender(char) === 'male' ? 'selected' : ''}>Male</option></select></div></div><div class="field"><label>Dynasty</label><input id="field-dynasty" value="${escapeHtml(char.dynasty)}"></div><div class="grid-2"><div class="field"><label>Birth date</label><input id="field-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label>Death date</label><input id="field-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div></div><div class="grid-2"><div class="field"><label>Culture</label><input id="field-culture" list="culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="field-religion" list="religion-list" value="${escapeHtml(char.religion)}"></div></div><div class="grid-2"><div class="field"><label>Father</label><input id="field-father" list="character-ids-list" value="${escapeHtml(char.father)}"></div><div class="field"><label>Mother</label><input id="field-mother" list="character-ids-list" value="${escapeHtml(char.mother)}"></div></div><div class="field"><label>Spouse</label><input id="field-spouse" list="character-ids-list" value="${escapeHtml(char.spouse)}"></div><div class="grid-2"><div class="field"><label>Marriage date</label><input id="field-marriage" value="${escapeHtml(char.marriageDate)}"></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="field-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label></div><div class="field"><label>Traits</label><textarea id="field-traits" placeholder="example:
+      els.editorHost.innerHTML = `<div class="panel"><div class="top-row" style="margin-bottom:16px;"><div><div class="title-top">Selected</div><div class="title-main">${escapeHtml(char.name || 'Unnamed')}</div></div><button class="danger" id="deleteSelectedBtn">Delete</button></div><datalist id="character-ids-list">${relationIdOptions}</datalist><datalist id="culture-list">${cultureOptions}</datalist><datalist id="religion-list">${religionOptions}</datalist><div class="stack"><div class="grid-2"><div class="field"><label>Character id</label><input id="field-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="field-dna" value="${escapeHtml(char.dna || '')}"></div></div><div class="grid-2"><div class="field"><label>Name</label><input id="field-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Gender</label><select id="field-gender"><option value="female" ${getGender(char) === 'female' ? 'selected' : ''}>Female</option><option value="male" ${getGender(char) === 'male' ? 'selected' : ''}>Male</option></select></div></div><div class="field"><label>Dynasty</label><input id="field-dynasty" value="${escapeHtml(char.dynasty)}"></div><div class="grid-2"><div class="field"><label>Birth date</label><input id="field-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label>Death date</label><input id="field-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div></div><div class="grid-2"><div class="field"><label>Culture</label><input id="field-culture" list="culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="field-religion" list="religion-list" value="${escapeHtml(char.religion)}"></div></div><div class="grid-2"><div class="field"><label>Father</label><input id="field-father" list="character-ids-list" value="${escapeHtml(char.father)}"></div><div class="field"><label>Mother</label><input id="field-mother" list="character-ids-list" value="${escapeHtml(char.mother)}"></div></div><div class="field"><label>Spouse</label><input id="field-spouse" list="character-ids-list" value="${escapeHtml(char.spouse)}"></div><div class="grid-2"><div class="field"><label>Marriage date</label><input id="field-marriage" value="${escapeHtml(char.marriageDate)}"></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="field-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label></div><div class="field"><label>Traits</label><textarea id="field-traits" placeholder="example:
 humble
 compassionate
 content
@@ -820,9 +1316,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       bindValueInput('field-marriage', (v) => updateSelectedCharacter({ marriageDate: String(v).trim() }), 'blur');
       bindValueInput('field-matrilineal', (v) => updateSelectedCharacter({ matrilineal: !!v }), 'change');
       const traits = document.getElementById('field-traits');
-      traits.onblur = (e) => updateSelectedCharacter({ traits: parseTraits(e.target.value) });
-      traits.onmousedown = (e) => e.stopPropagation();
-      traits.onclick = (e) => e.stopPropagation();
+      bindTraitsAutocomplete(traits);
     }
     function renderDatabase() {
       els.databaseChevron.style.transform = state.databaseOpen ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -830,7 +1324,34 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       if (!state.databaseOpen) { els.databaseDropdown.innerHTML = ''; return; }
       const cultureOptions = uniqueSorted([...state.cultures, ...state.characters.map((c) => c.culture)]);
       const religionOptions = uniqueSorted([...state.religions, ...state.characters.map((c) => c.religion)]);
-      els.databaseDropdown.innerHTML = `<div style="display:grid;gap:12px;"><div style="border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px;"><div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#f3dfb8;">🏛 Cultures</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input id="newCultureInput" placeholder="new_culture"><button class="accent" id="addCultureBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">Add</button></div><div class="db-list">${cultureOptions.map((culture) => `<div class="db-item">${escapeHtml(culture)}</div>`).join('')}</div></div><div style="border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px;"><div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#f3dfb8;">📖 Religions</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input id="newReligionInput" placeholder="new_religion"><button class="accent" id="addReligionBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">Add</button></div><div class="db-list">${religionOptions.map((religion) => `<div class="db-item">${escapeHtml(religion)}</div>`).join('')}</div></div></div>`;
+      const allTraitOptions = getAllTraitOptions();
+      const traitSearch = String(state.traitDbSearch || '').trim().toLowerCase();
+      const visibleTraitOptions = traitSearch ? allTraitOptions.filter((trait) => trait.toLowerCase().includes(traitSearch)) : allTraitOptions;
+      if (state.traitDbSelected && !visibleTraitOptions.includes(state.traitDbSelected)) state.traitDbSelected = '';
+      els.databaseDropdown.innerHTML = `<div style="display:grid;gap:12px;">
+        <div style="border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px;">
+          <div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#f3dfb8;">🏛 Cultures</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;"><input id="newCultureInput" placeholder="new_culture"><button class="accent" id="addCultureBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">Add</button></div>
+          <div class="db-list">${cultureOptions.map((culture) => `<div class="db-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(culture)}</span><button type="button" class="culture-delete-btn" data-culture="${escapeHtml(culture)}" style="flex:0 0 auto;width:22px;height:22px;padding:0;border-radius:999px;font-size:13px;line-height:1;">×</button></div>`).join('')}</div>
+        </div>
+        <div style="border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px;">
+          <div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#f3dfb8;">📖 Religions</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;"><input id="newReligionInput" placeholder="new_religion"><button class="accent" id="addReligionBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">Add</button></div>
+          <div class="db-list">${religionOptions.map((religion) => `<div class="db-item" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(religion)}</span><button type="button" class="religion-delete-btn" data-religion="${escapeHtml(religion)}" style="flex:0 0 auto;width:22px;height:22px;padding:0;border-radius:999px;font-size:13px;line-height:1;">×</button></div>`).join('')}</div>
+        </div>
+        <div style="border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px;">
+          <div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#f3dfb8;">🧬 Traits</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input id="newTraitInput" placeholder="new_trait">
+            <button class="accent" id="addTraitBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;min-width:72px;">Add</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input id="searchTraitInput" placeholder="search_trait" value="${escapeHtml(state.traitDbSearch || '')}">
+            <button class="accent" id="deleteTraitBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;min-width:72px;" ${state.traitDbSelected ? '' : 'disabled'}>Delete</button>
+          </div>
+          <div class="db-list" id="traitDbList">${visibleTraitOptions.length ? visibleTraitOptions.map((trait) => `<button type="button" class="db-item trait-db-item ${state.traitDbSelected === trait ? 'selected' : ''}" data-trait="${escapeHtml(trait)}" style="text-align:left;cursor:pointer;border:${state.traitDbSelected === trait ? '1px solid rgba(255,214,102,.95)' : '1px solid rgba(255,255,255,.06)'};background:${state.traitDbSelected === trait ? 'rgba(122,94,64,.35)' : 'rgba(255,255,255,.04)'};">${escapeHtml(trait)}</button>`).join('') : '<div class="db-item" style="opacity:.7;">No matching traits</div>'}</div>
+        </div>
+      </div>`;
       document.getElementById('addCultureBtn').onclick = () => {
         const input = document.getElementById('newCultureInput');
         const value = input.value.trim();
@@ -843,6 +1364,76 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         const value = input.value.trim();
         if (!value) return;
         state.religions = uniqueSorted([...state.religions, value]);
+        render();
+      };
+      els.databaseDropdown.querySelectorAll('.culture-delete-btn').forEach((btn) => {
+        btn.onmousedown = (e) => e.stopPropagation();
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const value = String(btn.dataset.culture || '').trim();
+          if (!value) return;
+          state.cultures = state.cultures.filter((item) => item !== value);
+          state.characters = state.characters.map((char) => char.culture === value ? { ...char, culture: '' } : char);
+          render();
+        };
+      });
+      els.databaseDropdown.querySelectorAll('.religion-delete-btn').forEach((btn) => {
+        btn.onmousedown = (e) => e.stopPropagation();
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const value = String(btn.dataset.religion || '').trim();
+          if (!value) return;
+          state.religions = state.religions.filter((item) => item !== value);
+          state.characters = state.characters.map((char) => char.religion === value ? { ...char, religion: '' } : char);
+          render();
+        };
+      });
+      document.getElementById('addTraitBtn').onclick = () => {
+        const input = document.getElementById('newTraitInput');
+        const value = input.value.trim();
+        if (!value) return;
+        state.traits = uniqueSorted([...state.traits, value]);
+        state.traitDbSearch = value;
+        state.traitDbSelected = value;
+        render();
+      };
+      const searchTraitInput = document.getElementById('searchTraitInput');
+      const traitDbList = document.getElementById('traitDbList');
+      const deleteTraitBtn = document.getElementById('deleteTraitBtn');
+
+      function refreshTraitDbList() {
+        const allTraitOptions = getAllTraitOptions();
+        const q = String(state.traitDbSearch || '').trim().toLowerCase();
+        const visibleTraitOptions = q ? allTraitOptions.filter((trait) => trait.toLowerCase().includes(q)) : allTraitOptions;
+        if (state.traitDbSelected && !visibleTraitOptions.includes(state.traitDbSelected)) state.traitDbSelected = '';
+        deleteTraitBtn.disabled = !state.traitDbSelected;
+        traitDbList.innerHTML = visibleTraitOptions.length
+          ? visibleTraitOptions.map((trait) => `<button type="button" class="db-item trait-db-item ${state.traitDbSelected === trait ? 'selected' : ''}" data-trait="${escapeHtml(trait)}" style="text-align:left;cursor:pointer;border:${state.traitDbSelected === trait ? '1px solid rgba(255,214,102,.95)' : '1px solid rgba(255,255,255,.06)'};background:${state.traitDbSelected === trait ? 'rgba(122,94,64,.35)' : 'rgba(255,255,255,.04)'};">${escapeHtml(trait)}</button>`).join('')
+          : '<div class="db-item" style="opacity:.7;">No matching traits</div>';
+        traitDbList.querySelectorAll('.trait-db-item').forEach((btn) => {
+          btn.onmousedown = (e) => e.stopPropagation();
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const trait = btn.dataset.trait || '';
+            state.traitDbSelected = state.traitDbSelected === trait ? '' : trait;
+            refreshTraitDbList();
+          };
+        });
+      }
+
+      searchTraitInput.oninput = (e) => {
+        state.traitDbSearch = e.target.value;
+        refreshTraitDbList();
+      };
+      searchTraitInput.onmousedown = (e) => e.stopPropagation();
+      searchTraitInput.onclick = (e) => e.stopPropagation();
+      refreshTraitDbList();
+      document.getElementById('deleteTraitBtn').onclick = () => {
+        const trait = String(state.traitDbSelected || '').trim();
+        if (!trait) return;
+        state.traits = state.traits.filter((item) => item !== trait);
+        state.characters = state.characters.map((char) => ({ ...char, traits: (char.traits || []).filter((item) => item !== trait) }));
+        state.traitDbSelected = '';
         render();
       };
     }
