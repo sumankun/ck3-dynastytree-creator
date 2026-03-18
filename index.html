@@ -733,6 +733,12 @@ akan0002 = {
       const clean = String(trait || '').trim();
       const char = selectedCharacter();
       if (!char || !clean) return;
+      const scrollState = [];
+      if (els.characterTraitPickerBody) {
+        els.characterTraitPickerBody.querySelectorAll('.trait-picker-list').forEach((list, index) => {
+          scrollState[index] = list.scrollTop;
+        });
+      }
       const current = Array.isArray(char.traits) ? [...char.traits] : [];
       const exists = current.includes(clean);
       const nextTraits = exists ? current.filter((item) => item !== clean) : [...current, clean];
@@ -740,6 +746,11 @@ akan0002 = {
       const idx = state.characters.findIndex((c) => c.id === char.id);
       if (idx !== -1) state.characters[idx] = { ...char, traits: nextTraits };
       render();
+      if (els.characterTraitPickerBody) {
+        els.characterTraitPickerBody.querySelectorAll('.trait-picker-list').forEach((list, index) => {
+          list.scrollTop = scrollState[index] || 0;
+        });
+      }
     }
     function renderCharacterTraitPicker(char) {
       const selectedTraits = new Set(Array.isArray(char && char.traits) ? char.traits : []);
