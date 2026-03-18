@@ -1901,17 +1901,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         };
       });
     }
-    function render() {
-      if (els.searchInput) els.searchInput.value = state.search;
-      renderValidation();
-      renderEditorPanel();
-      renderDatabase();
-      renderCards();
-      renderLines();
-      renderQuickEdit();
-      renderExportModal();
-      renderPasteCk3Modal();
-      renderCharacterTraitPickerModal();
+    function renderOverlayState() {
       els.saveStatus.style.display = state.saveStatus ? 'block' : 'none';
       els.saveStatus.textContent = state.saveStatus;
       els.contextMenu.style.display = state.contextMenu ? 'block' : 'none';
@@ -1919,6 +1909,38 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         els.contextMenu.style.left = `${state.contextMenu.clientX + 8}px`;
         els.contextMenu.style.top = `${state.contextMenu.clientY + 8}px`;
       }
+    }
+    function renderStageOnly() {
+      renderCards();
+      renderLines();
+      renderOverlayState();
+    }
+    let scheduledRenderFrame = 0;
+    let scheduledRenderMode = null;
+    function scheduleRender(mode = 'full') {
+      if (mode === 'full' || !scheduledRenderMode) scheduledRenderMode = mode;
+      if (scheduledRenderFrame) return;
+      scheduledRenderFrame = requestAnimationFrame(() => {
+        const nextMode = scheduledRenderMode || 'full';
+        scheduledRenderFrame = 0;
+        scheduledRenderMode = null;
+        if (nextMode === 'stage') {
+          renderStageOnly();
+        } else {
+          render();
+        }
+      });
+    }
+    function render() {
+      if (els.searchInput) els.searchInput.value = state.search;
+      renderValidation();
+      renderEditorPanel();
+      renderDatabase();
+      renderStageOnly();
+      renderQuickEdit();
+      renderExportModal();
+      renderPasteCk3Modal();
+      renderCharacterTraitPickerModal();
     }
     document.getElementById('saveJsonBtn').onclick = saveProjectJson;
     document.getElementById('pasteCk3Btn').onclick = () => { state.pasteCk3Open = true; render(); if (els.pasteCk3Textarea) setTimeout(() => els.pasteCk3Textarea.focus(), 0); };
@@ -1969,18 +1991,20 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       render();
     };
     window.onmousemove = (e) => {
+      let stageNeedsRender = false;
       if (state.panning) {
         state.camera.x = panStartRef.cameraX + (e.clientX - panStartRef.x);
         state.camera.y = panStartRef.cameraY + (e.clientY - panStartRef.y);
-        render();
+        stageNeedsRender = true;
       }
       if (state.draggingNodeId) {
         const char = state.characters.find((c) => c.id === state.draggingNodeId);
         if (!char) return;
         char.x = nodeDragRef.charX + (e.clientX - nodeDragRef.x) / state.camera.zoom;
         char.y = nodeDragRef.charY + (e.clientY - nodeDragRef.y) / state.camera.zoom;
-        render();
+        stageNeedsRender = true;
       }
+      if (stageNeedsRender) scheduleRender('stage');
     };
     window.onmouseup = () => { state.panning = false; state.draggingNodeId = null; };
     els.stage.onwheel = (e) => {
