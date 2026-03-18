@@ -1045,15 +1045,25 @@ akan0002 = {
       if (!target) return;
       const oldId = target.id;
       const newId = patch.id;
-      let next = state.characters.map((char) => char.id === oldId ? sanitizeRelationshipFields({ ...char, ...patch }) : char);
-      if (newId && newId !== oldId) {
+      const isRenamingId = !!oldId && !!newId && newId !== oldId;
+      const selectedWasTarget = selectedCharacter() === target;
+      const quickEditWasTarget = quickEditCharacter() === target;
+      let updatedTarget = null;
+      let next = state.characters.map((char) => {
+        if (char !== target) return char;
+        updatedTarget = sanitizeRelationshipFields({ ...char, ...patch });
+        return updatedTarget;
+      });
+      if (isRenamingId) {
         next = next.map((char) => {
           const replaceLink = (value) => value === oldId ? newId : value;
           return { ...char, father: replaceLink(char.father), mother: replaceLink(char.mother), spouse: replaceLink(char.spouse) };
         });
       }
-      state.characters = syncSpouseData(next, newId && newId !== oldId ? newId : oldId);
-      if (newId && newId !== oldId) {
+      state.characters = syncSpouseData(next, isRenamingId ? newId : oldId);
+      if (selectedWasTarget && updatedTarget) state.selectedId = updatedTarget.id;
+      if (quickEditWasTarget && updatedTarget) state.quickEditId = updatedTarget.id;
+      if (isRenamingId) {
         if (state.selectedId === oldId) state.selectedId = newId;
         if (state.quickEditId === oldId) state.quickEditId = newId;
       }
@@ -1412,6 +1422,30 @@ akan0002 = {
         field.focus();
       };
     }
+    function bindRelationInput(id, handler) {
+      bindValueInput(id, handler, 'blur');
+      const el = document.getElementById(id);
+      if (!el) return;
+      const openRelationSuggestions = () => {
+        const value = el.value;
+        const start = typeof el.selectionStart === 'number' ? el.selectionStart : null;
+        const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : null;
+        el.value = '';
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.value = value;
+        if (start !== null && end !== null) {
+          try { el.setSelectionRange(start, end); } catch (err) {}
+        }
+      };
+      el.onfocus = () => {
+        requestAnimationFrame(openRelationSuggestions);
+      };
+      el.onclick = (e) => {
+        e.stopPropagation();
+        openRelationSuggestions();
+      };
+    }
+
     function renderValidation() {
       const issues = validateCharacters(state.characters);
       if (!issues.length) { els.validationPanel.style.display = 'none'; return; }
@@ -1446,23 +1480,9 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       bindRandomMonthDayButton('field-death-randomize', 'field-death', 'deathDate');
       bindValueInput('field-culture', (v) => updateSelectedCharacter({ culture: v }), 'blur');
       bindValueInput('field-religion', (v) => updateSelectedCharacter({ religion: v }), 'blur');
-      bindValueInput('field-father', (v) => updateSelectedCharacter({ father: String(v).trim() }), 'blur');
-      bindValueInput('field-mother', (v) => updateSelectedCharacter({ mother: String(v).trim() }), 'blur');
-      const spouseField = document.getElementById('field-spouse');
-      if (spouseField) {
-        const commitSpouse = () => updateSelectedCharacter({ spouse: String(spouseField.value).trim() });
-        spouseField.onchange = commitSpouse;
-        spouseField.onblur = commitSpouse;
-        spouseField.onkeydown = (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            commitSpouse();
-          }
-        };
-        spouseField.onmousedown = (e) => e.stopPropagation();
-        spouseField.onclick = (e) => e.stopPropagation();
-      }
+      bindRelationInput('field-father', (v) => updateSelectedCharacter({ father: String(v).trim() }));
+      bindRelationInput('field-mother', (v) => updateSelectedCharacter({ mother: String(v).trim() }));
+      bindRelationInput('field-spouse', (v) => updateSelectedCharacter({ spouse: String(v).trim() }));
       bindValueInput('field-marriage', (v) => updateSelectedCharacter({ marriageDate: String(v).trim() }), 'blur');
       bindRandomMonthDayButton('field-marriage-randomize', 'field-marriage', 'marriageDate');
       bindValueInput('field-matrilineal', (v) => updateSelectedCharacter({ matrilineal: !!v }), 'change');
