@@ -302,6 +302,64 @@
       color:#f3dfb8; font-size:14px;
     }
     .qe-toggle-row input[type="checkbox"] { width:16px; height:16px; flex:0 0 auto; }
+    .trait-picker-modal {
+      position: fixed;
+      z-index: 70;
+      width: min(1240px, calc(100vw - 32px));
+      max-width: min(1240px, calc(100vw - 32px));
+      max-height: min(82vh, 900px);
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(138,106,71,.92);
+      background: linear-gradient(145deg, rgba(18,14,35,.985), rgba(8,8,18,.975));
+      padding: 18px;
+      box-shadow: 0 28px 70px rgba(0,0,0,.62);
+      backdrop-filter: blur(18px);
+    }
+    .trait-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+    .trait-picker-column {
+      min-width: 0;
+      min-height: 0;
+      border-radius: 16px;
+      border: 1px solid rgba(122,94,64,.45);
+      background: rgba(255,255,255,.03);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+    .trait-picker-column-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #f3dfb8;
+      letter-spacing: .02em;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: linear-gradient(180deg, rgba(20,15,35,.98), rgba(20,15,35,.82));
+      padding-bottom: 4px;
+    }
+    .trait-picker-list {
+      display: grid;
+      gap: 6px;
+      height: clamp(180px, 26vh, 280px);
+      overflow: auto;
+      padding-right: 2px;
+      align-content: start;
+    }
+    @media (max-width: 1120px) {
+      .trait-picker-modal {
+        width: min(980px, calc(100vw - 24px));
+        max-width: min(980px, calc(100vw - 24px));
+      }
+      .trait-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .trait-picker-list { height: clamp(180px, 24vh, 260px); }
+    }
   </style>
 </head>
 <body>
@@ -406,6 +464,15 @@ akan0002 = {
       </div>
     </div>
   </div>
+  <div id="characterTraitPickerModal" style="display:none;">
+    <div class="trait-picker-modal">
+      <div class="top-row" style="margin-bottom:10px;align-items:center;justify-content:space-between;gap:10px;">
+        <div class="title-top" style="margin:0;">Traits</div>
+        <button id="closeCharacterTraitPickerBtn">✕</button>
+      </div>
+      <div id="characterTraitPickerBody"></div>
+    </div>
+  </div>
   <div id="exportModal" class="modal-backdrop" style="display:none;">
     <div class="modal">
       <div class="top-row" style="margin-bottom:16px;">
@@ -427,305 +494,80 @@ akan0002 = {
   <script>
     const CARD_WIDTH = 250;
     const CARD_HEIGHT = 168;
-    const DEFAULT_TRAITS = [
-      'education_intrigue_1',
-      'education_intrigue_2',
-      'education_intrigue_3',
-      'education_intrigue_4',
-      'education_intrigue_5',
-      'education_diplomacy_1',
-      'education_diplomacy_2',
-      'education_diplomacy_3',
-      'education_diplomacy_4',
-      'education_diplomacy_5',
-      'education_stewardship_1',
-      'education_stewardship_2',
-      'education_stewardship_3',
-      'education_stewardship_4',
-      'education_stewardship_5',
-      'education_martial_1',
-      'education_martial_2',
-      'education_martial_3',
-      'education_martial_4',
-      'education_martial_5',
-      'education_learning_1',
-      'education_learning_2',
-      'education_learning_3',
-      'education_learning_4',
-      'education_learning_5',
-      'diplomat',
-      'family_first',
-      'august',
-      'lifestyle_reveler',
-      'lifestyle_blademaster',
-      'lifestyle_hunter',
-      'strategist',
-      'overseer',
-      'gallant',
-      'architect',
-      'administrator',
-      'avaricious',
-      'schemer',
-      'seducer',
-      'torturer',
-      'whole_of_body',
-      'scholar',
-      'theologian',
-      'lifestyle_mystic',
-      'lifestyle_physician',
-      'lifestyle_herbalist',
-      'lifestyle_gardener',
-      'lustful',
-      'chaste',
-      'gluttonous',
-      'temperate',
-      'greedy',
-      'generous',
-      'lazy',
-      'diligent',
-      'wrathful',
-      'calm',
-      'patient',
-      'impatient',
-      'arrogant',
-      'humble',
-      'deceitful',
-      'honest',
-      'craven',
-      'brave',
-      'shy',
-      'gregarious',
-      'ambitious',
-      'content',
-      'arbitrary',
-      'just',
-      'cynical',
-      'zealous',
-      'paranoid',
-      'trusting',
-      'compassionate',
-      'callous',
-      'sadistic',
-      'stubborn',
-      'fickle',
-      'eccentric',
-      'vengeful',
-      'forgiving',
-      'rowdy',
-      'charming',
-      'curious',
-      'pensive',
-      'bossy',
-      'drunkard',
-      'hashishiyah',
-      'rakish',
-      'reclusive',
-      'irritable',
-      'flagellant',
-      'profligate',
-      'improvident',
-      'contrite',
-      'comfort_eater',
-      'inappetetic',
-      'journaller',
-      'confider',
-      'athletic',
-      'pregnant',
-      'depressed_1',
-      'depressed_genetic',
-      'lunatic_1',
-      'lunatic_genetic',
-      'possessed_1',
-      'possessed_genetic',
-      'ill',
-      'pneumonic',
-      'great_pox',
-      'early_great_pox',
-      'lovers_pox',
-      'leper',
-      'wounded_1',
-      'wounded_2',
-      'wounded_3',
-      'maimed',
-      'one_eyed',
-      'one_legged',
-      'disfigured',
-      'infirm',
-      'incapable',
-      'gout_ridden',
-      'consumption',
-      'cancer',
-      'typhus',
-      'bubonic_plague',
-      'smallpox',
-      'measles',
-      'dysentery',
-      'ergotism',
-      'sickly',
-      'scarred',
-      'eunuch_1',
-      'beardless_eunuch',
-      'blind',
-      'beauty_bad_1',
-      'beauty_bad_2',
-      'beauty_bad_3',
-      'beauty_good_1',
-      'beauty_good_2',
-      'beauty_good_3',
-      'intellect_bad_1',
-      'intellect_bad_2',
-      'intellect_bad_3',
-      'intellect_good_1',
-      'intellect_good_2',
-      'intellect_good_3',
-      'physique_bad_1',
-      'physique_bad_2',
-      'physique_bad_3',
-      'physique_good_1',
-      'physique_good_2',
-      'physique_good_3',
-      'pure_blooded',
-      'fecund',
-      'strong',
-      'shrewd',
-      'clubfooted',
-      'hunchbacked',
-      'lisping',
-      'stuttering',
-      'dwarf',
-      'giant',
-      'inbred',
-      'weak',
-      'dull',
-      'impotent',
-      'spindly',
-      'scaly',
-      'albino',
-      'wheezing',
-      'bleeder',
-      'infertile',
-      'celibate',
-      'pilgrim',
-      'hajjaj',
-      'excommunicated',
-      'devoted',
-      'sayyid',
-      'saoshyant',
-      'saoshyant_descendant',
-      'savior',
-      'divine_blood',
-      'blood_of_prophet',
-      'faith_warrior',
-      'saint',
-      'historical_character',
-      'legend',
-      'order_member',
-      'berserker',
-      'shieldmaiden',
-      'varangian',
-      'lifestyle_poet',
-      'bastard',
-      'legitimized_bastard',
-      'disputed_heritage',
-      'child_of_concubine_female',
-      'child_of_concubine_male',
-      'wild_oat',
-      'bastard_founder',
-      'twin',
-      'kinslayer_1',
-      'kinslayer_2',
-      'kinslayer_3',
-      'deviant',
-      'cannibal',
-      'sodomite',
-      'incestuous',
-      'adulterer',
-      'fornicator',
-      'murderer',
-      'born_in_the_purple',
-      'augustus',
-      'viking',
-      'reincarnation',
-      'adventurer',
-      'adventurer_follower',
-      'heresiarch',
-      'peasant_leader',
-      'populist_leader',
-      'witch',
-      'disinherited',
-      'denounced',
-      'decadent',
-      'extolled',
-      'gallivanter',
-      'loyal',
-      'disloyal',
-      'gallowsbait',
-      'logistician',
-      'military_engineer',
-      'aggressive_attacker',
-      'unyielding_defender',
-      'forder',
-      'flexible_leader',
-      'desert_warrior',
-      'jungle_stalker',
-      'reaver',
-      'reckless',
-      'holy_warrior',
-      'open_terrain_expert',
-      'rough_terrain_expert',
-      'forest_fighter',
-      'cautious_leader',
-      'organizer',
-      'winter_soldier',
-      'crusader_king',
-      'chakravarti',
-      'greatest_of_khans',
-      'conqueror',
-      'paragon',
-      'consecrated_blood',
-      'education_martial_prowess_1',
-      'education_martial_prowess_2',
-      'education_martial_prowess_3',
-      'education_martial_prowess_4',
-      'diplomatic_court_1',
-      'diplomatic_court_2',
-      'warlike_court_1',
-      'warlike_court_2',
-      'administrative_court_1',
-      'administrative_court_2',
-      'intrigue_court_1',
-      'intrigue_court_2',
-      'scholarly_court_1',
-      'scholarly_court_2',
-      'education_republican_knowledge_1',
-      'education_republican_knowledge_2',
-      'education_republican_knowledge_3',
-      'education_republican_knowledge_4',
-      'tourney_participant',
-      'lifestyle_traveler',
-      'fp3_struggle_detractor',
-      'fp3_struggle_supporter',
-      'charioteer_blue',
-      'charioteer_green',
-      'charioteer_white',
-      'charioteer_red',
-      'governor',
-      'despoiler_of_byzantium',
-      'campeador',
-      'violet_poet',
-      'knight_errant',
-      'the_wake',
-      'immortal',
-      'lifestyle_wayfarer',
-      'lifestyle_voyager',
-      'lifestyle_surveyor',
-      'nomadic_philosophy',
-      'lifestyle_seasoned_pastor',
-      'golden_lineage',
-      'confucian_education',
-      'former_emperor',
-      'burdened',
-    ];
+    const DEFAULT_TRAITS = [];
+
+    const RAW_DEFAULT_TRAIT_CATEGORIES = {
+      personality: [
+        'lustful','chaste','gluttonous','temperate','greedy','generous','lazy','diligent','wrathful','calm','patient','impatient','arrogant','humble','deceitful','honest','craven','brave','shy','gregarious','ambitious','content','arbitrary','just','cynical','zealous','paranoid','trusting','compassionate','callous','sadistic','stubborn','fickle','eccentric','vengeful','forgiving'
+      ],
+      education: [
+        'education_intrigue_1','education_intrigue_2','education_intrigue_3','education_intrigue_4','education_intrigue_5','education_diplomacy_1','education_diplomacy_2','education_diplomacy_3','education_diplomacy_4','education_diplomacy_5','education_stewardship_1','education_stewardship_2','education_stewardship_3','education_stewardship_4','education_stewardship_5','education_martial_1','education_martial_2','education_martial_3','education_martial_4','education_martial_5','education_learning_1','education_learning_2','education_learning_3','education_learning_4','education_learning_5','rowdy','charming','curious','pensive','bossy'
+      ],
+      lifestyle: [
+        'diplomat','family_first','august','lifestyle_reveler','lifestyle_blademaster','lifestyle_hunter','strategist','overseer','gallant','architect','administrator','avaricious','schemer','seducer','torturer','whole_of_body','scholar','theologian','lifestyle_mystic','lifestyle_physician','lifestyle_herbalist','lifestyle_gardener','lifestyle_poet','lifestyle_traveler','lifestyle_wayfarer','lifestyle_voyager','lifestyle_surveyor','nomadic_philosophy','lifestyle_seasoned_pastor'
+      ],
+      stress: [
+        'drunkard','hashishiyah','rakish','reclusive','irritable','flagellant','profligate','improvident','contrite','comfort_eater','inappetetic','journaller','confider','athletic','depressed_1','depressed_genetic','lunatic_1','lunatic_genetic','possessed_1','possessed_genetic','burdened'
+      ],
+      health: [
+        'pregnant','ill','pneumonic','great_pox','early_great_pox','lovers_pox','leper','wounded_1','wounded_2','wounded_3','maimed','one_eyed','one_legged','disfigured','infirm','incapable','gout_ridden','consumption','cancer','typhus','bubonic_plague','smallpox','measles','dysentery','ergotism','sickly','scarred','eunuch_1','beardless_eunuch','blind'
+      ],
+      commander: [
+        'logistician','military_engineer','aggressive_attacker','unyielding_defender','forder','flexible_leader','desert_warrior','jungle_stalker','reaver','reckless','holy_warrior','open_terrain_expert','rough_terrain_expert','forest_fighter','cautious_leader','organizer','winter_soldier','crusader_king','faith_warrior','order_member','berserker','shieldmaiden','varangian','viking','peasant_leader','populist_leader','greatest_of_khans','conqueror','education_martial_prowess_1','education_martial_prowess_2','education_martial_prowess_3','education_martial_prowess_4','campeador','knight_errant','the_wake'
+      ],
+      physical: [
+        'beauty_bad_1','beauty_bad_2','beauty_bad_3','beauty_good_1','beauty_good_2','beauty_good_3','intellect_bad_1','intellect_bad_2','intellect_bad_3','intellect_good_1','intellect_good_2','intellect_good_3','physique_bad_1','physique_bad_2','physique_bad_3','physique_good_1','physique_good_2','physique_good_3','pure_blooded','fecund','strong','shrewd','clubfooted','hunchbacked','lisping','stuttering','dwarf','giant','inbred','weak','dull','impotent','spindly','scaly','albino','wheezing','bleeder','infertile'
+      ],
+      other: [
+        'celibate','pilgrim','hajjaj','excommunicated','devoted','sayyid','saoshyant','saoshyant_descendant','savior','divine_blood','blood_of_prophet','saint','historical_character','legend','bastard','legitimized_bastard','disputed_heritage','child_of_concubine_female','child_of_concubine_male','wild_oat','bastard_founder','twin','kinslayer_1','kinslayer_2','kinslayer_3','deviant','cannibal','sodomite','incestuous','adulterer','fornicator','murderer','born_in_the_purple','augustus','reincarnation','adventurer_follower','adventurer','heresiarch','witch','disinherited','denounced','decadent','extolled','gallivanter','loyal','disloyal','gallowsbait','chakravarti','paragon','consecrated_blood','diplomatic_court_1','diplomatic_court_2','warlike_court_1','warlike_court_2','administrative_court_1','administrative_court_2','intrigue_court_1','intrigue_court_2','scholarly_court_1','scholarly_court_2','education_republican_knowledge_1','education_republican_knowledge_2','education_republican_knowledge_3','education_republican_knowledge_4','tourney_participant','fp3_struggle_detractor','fp3_struggle_supporter','charioteer_blue','charioteer_green','charioteer_white','charioteer_red','governor','despoiler_of_byzantium','violet_poet','immortal','golden_lineage','confucian_education','former_emperor'
+      ],
+    };
+
+    const TRAIT_CATEGORY_KEYS = ['personality', 'education', 'lifestyle', 'stress', 'health', 'commander', 'physical', 'other'];
+    const TRAIT_CATEGORY_LABELS = {
+      personality: 'Personality',
+      education: 'Education',
+      lifestyle: 'Lifestyle',
+      stress: 'Stress',
+      health: 'Health',
+      commander: 'Commander',
+      physical: 'Physical',
+      other: 'Other',
+    };
+    function createEmptyTraitCategories() {
+      return Object.fromEntries(TRAIT_CATEGORY_KEYS.map((key) => [key, []]));
+    }
+    function cloneTraitCategories(source) {
+      const base = createEmptyTraitCategories();
+      TRAIT_CATEGORY_KEYS.forEach((key) => {
+        base[key] = Array.isArray(source && source[key]) ? [...source[key]] : [];
+      });
+      return base;
+    }
+    function normalizeTraitCategories(raw, fallbackTraits = []) {
+      const base = createEmptyTraitCategories();
+      const seen = new Set();
+      TRAIT_CATEGORY_KEYS.forEach((key) => {
+        const values = Array.isArray(raw && raw[key]) ? raw[key] : [];
+        values.forEach((value) => {
+          const trait = String(value || '').trim();
+          if (!trait || seen.has(trait)) return;
+          seen.add(trait);
+          base[key].push(trait);
+        });
+      });
+      (Array.isArray(fallbackTraits) ? fallbackTraits : []).forEach((value) => {
+        const trait = String(value || '').trim();
+        if (!trait || seen.has(trait)) return;
+        seen.add(trait);
+        base.other.push(trait);
+      });
+      TRAIT_CATEGORY_KEYS.forEach((key) => {
+        base[key] = uniqueSorted(base[key]);
+      });
+      return base;
+    }
+    const DEFAULT_TRAIT_CATEGORIES = normalizeTraitCategories(RAW_DEFAULT_TRAIT_CATEGORIES);
     const state = {
       characters: [],
       selectedId: null,
@@ -736,8 +578,11 @@ akan0002 = {
       cultures: [],
       religions: [],
       traits: [...DEFAULT_TRAITS],
+      traitCategories: cloneTraitCategories(DEFAULT_TRAIT_CATEGORIES),
       traitDbSearch: "",
       traitDbSelected: "",
+      traitPendingAdd: "",
+      characterTraitPickerOpen: false,
       saveStatus: "",
       contextMenu: null,
       draggingNodeId: null,
@@ -757,6 +602,8 @@ akan0002 = {
       contextMenu: document.getElementById("contextMenu"),
       exportModal: document.getElementById("exportModal"),
       exportTextarea: document.getElementById("exportTextarea"),
+      characterTraitPickerModal: document.getElementById("characterTraitPickerModal"),
+      characterTraitPickerBody: document.getElementById("characterTraitPickerBody"),
       quickEditModal: document.getElementById("quickEditModal"),
       quickEditTitle: document.getElementById("quickEditTitle"),
       quickEditBody: document.getElementById("quickEditBody"),
@@ -817,9 +664,37 @@ akan0002 = {
     function escapeHtml(text) { return String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
     function parseTraits(text) { return text.split('\n').map((t) => t.trim()).filter(Boolean); }
     function formatTraitsForTextarea(traits) { return traits.join('\n'); }
+    function syncTraitCacheFromCategories() {
+      state.traits = uniqueSorted(TRAIT_CATEGORY_KEYS.flatMap((key) => state.traitCategories[key] || []));
+      return state.traits;
+    }
+    function getTraitCategory(trait) {
+      const clean = String(trait || '').trim();
+      if (!clean) return '';
+      return TRAIT_CATEGORY_KEYS.find((key) => (state.traitCategories[key] || []).includes(clean)) || '';
+    }
+    function upsertTraitCategory(trait, preferredCategory = 'other') {
+      const clean = String(trait || '').trim();
+      if (!clean) return '';
+      const targetCategory = getTraitCategory(clean) || (TRAIT_CATEGORY_KEYS.includes(preferredCategory) ? preferredCategory : 'other');
+      TRAIT_CATEGORY_KEYS.forEach((key) => {
+        const values = state.traitCategories[key] || [];
+        state.traitCategories[key] = key === targetCategory ? uniqueSorted([...values, clean]) : values.filter((item) => item !== clean);
+      });
+      syncTraitCacheFromCategories();
+      return targetCategory;
+    }
+    function removeTraitFromCategories(trait) {
+      const clean = String(trait || '').trim();
+      if (!clean) return;
+      TRAIT_CATEGORY_KEYS.forEach((key) => {
+        state.traitCategories[key] = (state.traitCategories[key] || []).filter((item) => item !== clean);
+      });
+      syncTraitCacheFromCategories();
+    }
     function getAllTraitOptions() {
       return uniqueSorted([
-        ...state.traits,
+        ...syncTraitCacheFromCategories(),
         ...state.characters.flatMap((c) => Array.isArray(c.traits) ? c.traits : [])
       ]);
     }
@@ -847,11 +722,47 @@ akan0002 = {
       const traits = normalizeTraitListFromTextarea(textarea.value);
       const char = selectedCharacter();
       if (!char) return;
-      state.traits = uniqueSorted([...state.traits, ...traits]);
+      traits.forEach((trait) => upsertTraitCategory(trait, 'other'));
       const next = { ...char, traits };
       const idx = state.characters.findIndex((c) => c.id === char.id);
       if (idx !== -1) state.characters[idx] = next;
       if (options.render !== false) render();
+    }
+
+    function toggleTraitOnSelectedCharacter(trait) {
+      const clean = String(trait || '').trim();
+      const char = selectedCharacter();
+      if (!char || !clean) return;
+      const current = Array.isArray(char.traits) ? [...char.traits] : [];
+      const exists = current.includes(clean);
+      const nextTraits = exists ? current.filter((item) => item !== clean) : [...current, clean];
+      upsertTraitCategory(clean, getTraitCategory(clean) || 'other');
+      const idx = state.characters.findIndex((c) => c.id === char.id);
+      if (idx !== -1) state.characters[idx] = { ...char, traits: nextTraits };
+      render();
+    }
+    function renderCharacterTraitPicker(char) {
+      const selectedTraits = new Set(Array.isArray(char && char.traits) ? char.traits : []);
+      return `<div class="trait-picker-grid">${TRAIT_CATEGORY_KEYS.map((key) => {
+        const rawItems = state.traitCategories[key] || [];
+        const items = key === 'education'
+          ? [...rawItems].sort((a, b) => {
+              const aEdu = String(a).startsWith('education_') ? 0 : 1;
+              const bEdu = String(b).startsWith('education_') ? 0 : 1;
+              return aEdu - bEdu || String(a).localeCompare(String(b));
+            })
+          : rawItems;
+        return `<div class="trait-picker-column">
+          <div class="trait-picker-column-title">${escapeHtml(TRAIT_CATEGORY_LABELS[key])}</div>
+          <div class="trait-picker-list">${items.length ? items.map((trait) => {
+            const selected = selectedTraits.has(trait);
+            return `<button type="button" class="character-trait-pick-btn" data-trait="${escapeHtml(trait)}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:7px 9px;border-radius:12px;border:1px solid ${selected ? 'rgba(255,146,188,.72)' : 'rgba(255,255,255,.08)'};background:${selected ? 'rgba(255,122,169,.14)' : 'rgba(255,255,255,.03)'};box-shadow:${selected ? '0 0 0 1px rgba(255,154,198,.12), 0 0 14px rgba(255,124,176,.28)' : 'none'};color:#f3dfb8;cursor:pointer;">
+              <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(trait)}</span>
+              <span style="flex:0 0 auto;color:${selected ? '#8cffb6' : 'rgba(140,255,182,.18)'};font-weight:800;">${selected ? '✓' : '·'}</span>
+            </button>`;
+          }).join('') : '<div style="font-size:12px;opacity:.55;">No traits here yet</div>'}</div>
+        </div>`;
+      }).join('')}</div>`;
     }
     function ensureTraitAutocompleteUi() {
       let box = document.getElementById('trait-suggest-box');
@@ -937,7 +848,7 @@ akan0002 = {
       const caretPos = lineStart + trait.length;
       textarea.focus();
       textarea.setSelectionRange(caretPos, caretPos);
-      state.traits = uniqueSorted([...state.traits, trait]);
+      upsertTraitCategory(trait, 'other');
       commitTraitsFromTextarea(textarea, { render: false });
       hideTraitSuggestions();
     }
@@ -971,7 +882,7 @@ akan0002 = {
           e.preventDefault();
           const { lineText } = getTextareaCurrentLineInfo(textarea);
           const cleanLine = String(lineText || '').trim();
-          if (cleanLine) state.traits = uniqueSorted([...state.traits, cleanLine]);
+          if (cleanLine) upsertTraitCategory(cleanLine, 'other');
           const value = textarea.value || '';
           const insertPos = textarea.selectionStart || 0;
           textarea.value = value.slice(0, insertPos) + '\n' + value.slice(insertPos);
@@ -988,7 +899,7 @@ akan0002 = {
         setTimeout(() => {
           const { lineText } = getTextareaCurrentLineInfo(textarea);
           const cleanLine = String(lineText || '').trim();
-          if (cleanLine) state.traits = uniqueSorted([...state.traits, cleanLine]);
+          if (cleanLine) upsertTraitCategory(cleanLine, 'other');
           commitTraitsFromTextarea(textarea);
           hideTraitSuggestions();
         }, 120);
@@ -1103,6 +1014,9 @@ akan0002 = {
       state.cultures = [];
       state.religions = [];
       state.traits = [...DEFAULT_TRAITS];
+      state.traitCategories = cloneTraitCategories(DEFAULT_TRAIT_CATEGORIES);
+      state.traitPendingAdd = '';
+      state.characterTraitPickerOpen = false;
       render();
     }
 
@@ -1288,7 +1202,7 @@ akan0002 = {
       state.characters = state.characters.concat(added);
       state.cultures = uniqueSorted([...state.cultures, ...added.map((c) => c.culture)]);
       state.religions = uniqueSorted([...state.religions, ...added.map((c) => c.religion)]);
-      state.traits = uniqueSorted([...state.traits, ...added.flatMap((c) => c.traits || [])]);
+      added.flatMap((c) => c.traits || []).forEach((trait) => upsertTraitCategory(trait, 'other'));
       state.selectedId = added[0] ? added[0].id : state.selectedId;
       state.quickEditId = null;
       state.pasteCk3Open = false;
@@ -1348,7 +1262,8 @@ akan0002 = {
       setStatus('Downloaded file');
     }
     function saveProjectJson() {
-      const payload = { version: 1, camera: state.camera, cultures: state.cultures, religions: state.religions, traits: state.traits, characters: state.characters.map(({ sex, ...char }) => normalizeCharacter(char)) };
+      syncTraitCacheFromCategories();
+      const payload = { version: 2, camera: state.camera, cultures: state.cultures, religions: state.religions, traits: state.traits, traitCategories: state.traitCategories, characters: state.characters.map(({ sex, ...char }) => normalizeCharacter(char)) };
       const jsonText = JSON.stringify(payload, null, 2);
       if (window.showSaveFilePicker) {
         window.showSaveFilePicker({ suggestedName: 'ck3_tree_project.json', types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }] })
@@ -1371,8 +1286,18 @@ akan0002 = {
         if (parsed.camera) state.camera = parsed.camera;
         if (Array.isArray(parsed.cultures)) state.cultures = uniqueSorted(parsed.cultures);
         if (Array.isArray(parsed.religions)) state.religions = uniqueSorted(parsed.religions);
-        if (Array.isArray(parsed.traits)) state.traits = uniqueSorted(parsed.traits);
-        else state.traits = [...DEFAULT_TRAITS];
+        if (parsed.traitCategories && typeof parsed.traitCategories === 'object') {
+          state.traitCategories = normalizeTraitCategories(parsed.traitCategories, Array.isArray(parsed.traits) ? parsed.traits : []);
+          syncTraitCacheFromCategories();
+        } else if (Array.isArray(parsed.traits)) {
+          state.traitCategories = normalizeTraitCategories({}, parsed.traits);
+          syncTraitCacheFromCategories();
+        } else {
+          state.traits = [...DEFAULT_TRAITS];
+          state.traitCategories = cloneTraitCategories(DEFAULT_TRAIT_CATEGORIES);
+        }
+        state.traitPendingAdd = '';
+      state.characterTraitPickerOpen = false;
         state.selectedId = parsed.characters && parsed.characters[0] ? parsed.characters[0].id : null;
         state.quickEditId = null;
         render();
@@ -1463,7 +1388,7 @@ akan0002 = {
       const relationIdOptions = state.characters.map((c) => c.id).filter((id) => id && id !== char.id).sort().map((id) => `<option value="${escapeHtml(id)}"></option>`).join('');
       const cultureOptions = uniqueSorted([...state.cultures, ...state.characters.map((c) => c.culture)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
       const religionOptions = uniqueSorted([...state.religions, ...state.characters.map((c) => c.religion)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
-      els.editorHost.innerHTML = `<div class="panel"><div class="top-row" style="margin-bottom:16px;"><div><div class="title-top">Selected</div><div class="title-main">${escapeHtml(char.name || 'Unnamed')}</div></div><button class="danger" id="deleteSelectedBtn">Delete</button></div><datalist id="character-ids-list">${relationIdOptions}</datalist><datalist id="culture-list">${cultureOptions}</datalist><datalist id="religion-list">${religionOptions}</datalist><div class="stack"><div class="grid-2"><div class="field"><label>Character id</label><input id="field-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="field-dna" value="${escapeHtml(char.dna || '')}"></div></div><div class="grid-2"><div class="field"><label>Name</label><input id="field-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Gender</label><select id="field-gender"><option value="female" ${getGender(char) === 'female' ? 'selected' : ''}>Female</option><option value="male" ${getGender(char) === 'male' ? 'selected' : ''}>Male</option></select></div></div><div class="field"><label>Dynasty</label><input id="field-dynasty" value="${escapeHtml(char.dynasty)}"></div><div class="grid-2"><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Birth date</span><button type="button" id="field-birth-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Death date</span><button type="button" id="field-death-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div></div><div class="grid-2"><div class="field"><label>Culture</label><input id="field-culture" list="culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="field-religion" list="religion-list" value="${escapeHtml(char.religion)}"></div></div><div class="grid-2"><div class="field"><label>Father</label><input id="field-father" list="character-ids-list" value="${escapeHtml(char.father)}"></div><div class="field"><label>Mother</label><input id="field-mother" list="character-ids-list" value="${escapeHtml(char.mother)}"></div></div><div class="field"><label>Spouse</label><input id="field-spouse" list="character-ids-list" value="${escapeHtml(char.spouse)}"></div><div class="grid-2"><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-size:10px; white-space:nowrap;">Marriage date</span><button type="button" id="field-marriage-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-marriage" value="${escapeHtml(char.marriageDate)}"></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="field-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label></div><div class="field"><label>Traits</label><textarea id="field-traits" placeholder="example:
+      els.editorHost.innerHTML = `<div class="panel"><div class="top-row" style="margin-bottom:16px;"><div><div class="title-top">Selected</div><div class="title-main">${escapeHtml(char.name || 'Unnamed')}</div></div><button class="danger" id="deleteSelectedBtn">Delete</button></div><datalist id="character-ids-list">${relationIdOptions}</datalist><datalist id="culture-list">${cultureOptions}</datalist><datalist id="religion-list">${religionOptions}</datalist><div class="stack"><div class="grid-2"><div class="field"><label>Character id</label><input id="field-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="field-dna" value="${escapeHtml(char.dna || '')}"></div></div><div class="grid-2"><div class="field"><label>Name</label><input id="field-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Gender</label><select id="field-gender"><option value="female" ${getGender(char) === 'female' ? 'selected' : ''}>Female</option><option value="male" ${getGender(char) === 'male' ? 'selected' : ''}>Male</option></select></div></div><div class="field"><label>Dynasty</label><input id="field-dynasty" value="${escapeHtml(char.dynasty)}"></div><div class="grid-2"><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Birth date</span><button type="button" id="field-birth-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Death date</span><button type="button" id="field-death-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div></div><div class="grid-2"><div class="field"><label>Culture</label><input id="field-culture" list="culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="field-religion" list="religion-list" value="${escapeHtml(char.religion)}"></div></div><div class="grid-2"><div class="field"><label>Father</label><input id="field-father" list="character-ids-list" value="${escapeHtml(char.father)}"></div><div class="field"><label>Mother</label><input id="field-mother" list="character-ids-list" value="${escapeHtml(char.mother)}"></div></div><div class="field"><label>Spouse</label><input id="field-spouse" list="character-ids-list" value="${escapeHtml(char.spouse)}"></div><div class="grid-2"><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-size:10px; white-space:nowrap;">Marriage date</span><button type="button" id="field-marriage-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-marriage" value="${escapeHtml(char.marriageDate)}"></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="field-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label></div><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span>Traits <span style="opacity:.72;font-weight:500;">(type or <button type="button" id="field-traits-pick" style="display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-left:4px;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">pick</button>)</span></span></label><textarea id="field-traits" placeholder="example:
 humble
 compassionate
 content
@@ -1488,6 +1413,15 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       bindValueInput('field-matrilineal', (v) => updateSelectedCharacter({ matrilineal: !!v }), 'change');
       const traits = document.getElementById('field-traits');
       bindTraitsAutocomplete(traits);
+      const traitPickBtn = document.getElementById('field-traits-pick');
+      if (traitPickBtn) {
+        traitPickBtn.onmousedown = (e) => e.stopPropagation();
+        traitPickBtn.onclick = (e) => {
+          e.stopPropagation();
+          state.characterTraitPickerOpen = !state.characterTraitPickerOpen;
+          render();
+        };
+      }
     }
     function renderDatabase() {
       els.databaseChevron.style.transform = state.databaseOpen ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -1513,9 +1447,10 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         <div style="border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px;">
           <div style="margin-bottom:10px;font-size:13px;font-weight:700;color:#f3dfb8;">🧬 Traits</div>
           <div style="display:flex;gap:8px;margin-bottom:10px;">
-            <input id="newTraitInput" placeholder="new_trait">
+            <input id="newTraitInput" placeholder="new_trait" value="${escapeHtml(state.traitPendingAdd || '')}">
             <button class="accent" id="addTraitBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;min-width:72px;">Add</button>
           </div>
+          ${state.traitPendingAdd ? `<div id="traitCategoryPicker" style="display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 10px;">${TRAIT_CATEGORY_KEYS.map((key) => `<button type="button" class="trait-category-btn" data-category="${key}" style="padding:5px 8px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(255,255,255,.04);color:#f3dfb8;font-size:11px;cursor:pointer;">${escapeHtml(TRAIT_CATEGORY_LABELS[key])}</button>`).join('')}<button type="button" id="cancelTraitCategoryBtn" style="padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.03);color:#d7c8aa;font-size:11px;cursor:pointer;">Cancel</button></div>` : ''}
           <div style="display:flex;gap:8px;margin-bottom:10px;">
             <input id="searchTraitInput" placeholder="search_trait" value="${escapeHtml(state.traitDbSearch || '')}">
             <button class="accent" id="deleteTraitBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;min-width:72px;" ${state.traitDbSelected ? '' : 'disabled'}>Delete</button>
@@ -1563,14 +1498,46 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         const input = document.getElementById('newTraitInput');
         const value = input.value.trim();
         if (!value) return;
-        state.traits = uniqueSorted([...state.traits, value]);
-        state.traitDbSearch = value;
-        state.traitDbSelected = value;
+        const existingCategory = getTraitCategory(value);
+        if (existingCategory) {
+          state.traitPendingAdd = '';
+      state.characterTraitPickerOpen = false;
+          state.traitDbSearch = value;
+          state.traitDbSelected = value;
+          render();
+          return;
+        }
+        state.traitPendingAdd = value;
         render();
       };
       const searchTraitInput = document.getElementById('searchTraitInput');
       const traitDbList = document.getElementById('traitDbList');
       const deleteTraitBtn = document.getElementById('deleteTraitBtn');
+      document.querySelectorAll('.trait-category-btn').forEach((btn) => {
+        btn.onmousedown = (e) => e.stopPropagation();
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const trait = String(state.traitPendingAdd || '').trim();
+          const category = btn.dataset.category || 'other';
+          if (!trait) return;
+          upsertTraitCategory(trait, category);
+          state.traitDbSearch = trait;
+          state.traitDbSelected = trait;
+          state.traitPendingAdd = '';
+      state.characterTraitPickerOpen = false;
+          render();
+        };
+      });
+      const cancelTraitCategoryBtn = document.getElementById('cancelTraitCategoryBtn');
+      if (cancelTraitCategoryBtn) {
+        cancelTraitCategoryBtn.onmousedown = (e) => e.stopPropagation();
+        cancelTraitCategoryBtn.onclick = (e) => {
+          e.stopPropagation();
+          state.traitPendingAdd = '';
+      state.characterTraitPickerOpen = false;
+          render();
+        };
+      }
 
       function refreshTraitDbList() {
         const allTraitOptions = getAllTraitOptions();
@@ -1602,7 +1569,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       document.getElementById('deleteTraitBtn').onclick = () => {
         const trait = String(state.traitDbSelected || '').trim();
         if (!trait) return;
-        state.traits = state.traits.filter((item) => item !== trait);
+        removeTraitFromCategories(trait);
         state.characters = state.characters.map((char) => ({ ...char, traits: (char.traits || []).filter((item) => item !== trait) }));
         state.traitDbSelected = '';
         render();
@@ -1892,6 +1859,37 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
     function renderPasteCk3Modal() {
       els.pasteCk3Modal.style.display = state.pasteCk3Open ? 'grid' : 'none';
     }
+    function renderCharacterTraitPickerModal() {
+      const char = selectedCharacter();
+      if (!state.characterTraitPickerOpen || !char) {
+        els.characterTraitPickerModal.style.display = 'none';
+        if (els.characterTraitPickerBody) els.characterTraitPickerBody.innerHTML = '';
+        return;
+      }
+      els.characterTraitPickerModal.style.display = 'block';
+      const traitPickBtn = document.getElementById('field-traits-pick');
+      const modalEl = els.characterTraitPickerModal.querySelector('.trait-picker-modal');
+      if (traitPickBtn && modalEl) {
+        const rect = traitPickBtn.getBoundingClientRect();
+        const modalWidth = Math.min(1240, window.innerWidth - 32);
+        const modalHeight = Math.min(window.innerHeight * 0.82, 900);
+        const preferredLeft = Math.round(rect.right + 8);
+        const left = Math.max(12, Math.min(window.innerWidth - modalWidth - 12, preferredLeft));
+        const preferredTop = Math.round(rect.top - 90);
+        const top = Math.max(12, Math.min(window.innerHeight - modalHeight - 12, preferredTop));
+        modalEl.style.left = `${left}px`;
+        modalEl.style.top = `${top}px`;
+      }
+      els.characterTraitPickerBody.innerHTML = renderCharacterTraitPicker(char);
+      document.querySelectorAll('.character-trait-pick-btn').forEach((btn) => {
+        btn.onmousedown = (e) => e.stopPropagation();
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const trait = btn.dataset.trait || '';
+          toggleTraitOnSelectedCharacter(trait);
+        };
+      });
+    }
     function render() {
       if (els.searchInput) els.searchInput.value = state.search;
       renderValidation();
@@ -1902,6 +1900,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       renderQuickEdit();
       renderExportModal();
       renderPasteCk3Modal();
+      renderCharacterTraitPickerModal();
       els.saveStatus.style.display = state.saveStatus ? 'block' : 'none';
       els.saveStatus.textContent = state.saveStatus;
       els.contextMenu.style.display = state.contextMenu ? 'block' : 'none';
@@ -1918,6 +1917,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
     document.getElementById('zoomInBtn').onclick = () => { state.camera.zoom = clampZoom(state.camera.zoom + 0.1); render(); };
     document.getElementById('zoomOutBtn').onclick = () => { state.camera.zoom = clampZoom(state.camera.zoom - 0.1); render(); };
     document.getElementById('closeQuickEditBtn').onclick = () => { state.quickEditId = null; render(); };
+    document.getElementById('closeCharacterTraitPickerBtn').onclick = () => { state.characterTraitPickerOpen = false; render(); };
     document.getElementById('closePasteCk3Btn').onclick = () => { state.pasteCk3Open = false; render(); };
     document.getElementById('cancelPasteCk3Btn').onclick = () => { state.pasteCk3Open = false; render(); };
     document.getElementById('importPasteCk3Btn').onclick = () => {
@@ -1988,6 +1988,14 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
     els.stage.onclick = () => { state.contextMenu = null; render(); };
     els.createHereBtn.onclick = () => { if (state.contextMenu) addCharacterAt(state.contextMenu.worldX, state.contextMenu.worldY); };
     els.quickEditModal.onclick = (e) => { if (e.target === els.quickEditModal) { state.quickEditId = null; render(); } };
+    document.addEventListener('mousedown', (e) => {
+      if (!state.characterTraitPickerOpen) return;
+      const popup = els.characterTraitPickerModal ? els.characterTraitPickerModal.querySelector('.trait-picker-modal') : null;
+      const trigger = document.getElementById('field-traits-pick');
+      if ((popup && popup.contains(e.target)) || (trigger && trigger.contains(e.target))) return;
+      state.characterTraitPickerOpen = false;
+      render();
+    });
     els.pasteCk3Modal.onclick = (e) => { if (e.target === els.pasteCk3Modal) { state.pasteCk3Open = false; render(); } };
     els.exportModal.onclick = (e) => { if (e.target === els.exportModal) { state.exportOpen = false; render(); } };
     render();
