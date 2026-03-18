@@ -58,6 +58,74 @@
       font-style: italic;
       white-space: pre-line;
     }
+    /* Unified custom scrollbars */
+    :root {
+      --scrollbar-track: rgba(20, 10, 24, 0.62);
+      --scrollbar-track-border: rgba(165, 92, 134, 0.36);
+      --scrollbar-thumb-start: rgba(255, 188, 224, 0.96);
+      --scrollbar-thumb-end: rgba(213, 120, 176, 0.92);
+      --scrollbar-thumb-hover-start: rgba(255, 207, 234, 0.99);
+      --scrollbar-thumb-hover-end: rgba(232, 141, 198, 0.96);
+      --scrollbar-thumb-border: rgba(24, 11, 28, 0.28);
+      --scrollbar-glow: rgba(242, 140, 196, 0.22);
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(236, 150, 198, 0.82) rgba(18, 10, 22, 0.52);
+    }
+    .panel-scroll,
+    .warning-list,
+    .db-list,
+    textarea,
+    select {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(244, 166, 209, 0.88) rgba(18, 10, 22, 0.46);
+      scrollbar-gutter: stable;
+    }
+    .panel-scroll::-webkit-scrollbar,
+    .warning-list::-webkit-scrollbar,
+    .db-list::-webkit-scrollbar,
+    textarea::-webkit-scrollbar,
+    select::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    .panel-scroll::-webkit-scrollbar-track,
+    .warning-list::-webkit-scrollbar-track,
+    .db-list::-webkit-scrollbar-track,
+    textarea::-webkit-scrollbar-track,
+    select::-webkit-scrollbar-track {
+      background: linear-gradient(180deg, rgba(18, 14, 35, 0.74), rgba(9, 8, 17, 0.86));
+      border: 1px solid var(--scrollbar-track-border);
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px rgba(255, 240, 205, 0.03);
+    }
+    .panel-scroll::-webkit-scrollbar-thumb,
+    .warning-list::-webkit-scrollbar-thumb,
+    .db-list::-webkit-scrollbar-thumb,
+    textarea::-webkit-scrollbar-thumb,
+    select::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-end));
+      border: 2px solid var(--scrollbar-thumb-border);
+      border-radius: 999px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 244, 219, 0.14),
+        0 0 12px var(--scrollbar-glow);
+    }
+    .panel-scroll::-webkit-scrollbar-thumb:hover,
+    .warning-list::-webkit-scrollbar-thumb:hover,
+    .db-list::-webkit-scrollbar-thumb:hover,
+    textarea::-webkit-scrollbar-thumb:hover,
+    select::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
+    }
+    .panel-scroll::-webkit-scrollbar-corner,
+    .warning-list::-webkit-scrollbar-corner,
+    .db-list::-webkit-scrollbar-corner,
+    textarea::-webkit-scrollbar-corner,
+    select::-webkit-scrollbar-corner {
+      background: transparent;
+    }
     .app { position: relative; z-index: 1; display: flex; width: 100vw; height: 100vh; }
     .sidebar {
       width: 390px;
@@ -211,17 +279,19 @@
     .db-item { border-radius: 8px; padding: 4px 8px; font-size: 14px; color: #e8d3ac; }
     .qe-stats-grid { display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:10px; margin-top:14px; }
     .qe-stat-card { border-radius:16px; border:1px solid rgba(122,94,64,.6); background:rgba(0,0,0,.2); padding:10px 8px; display:flex; flex-direction:column; align-items:center; gap:8px; }
-    .qe-stat-head { width:100%; display:grid; grid-template-columns:24px 1fr 24px; align-items:center; gap:6px; }
+    .qe-stat-head { width:100%; display:grid; grid-template-columns:24px 1fr 24px; align-items:center; gap:6px; transform:translateX(-2px); }
     .qe-stat-step {
       width:24px; height:24px; border-radius:999px; display:grid; place-items:center;
       border:1px solid rgba(201,168,109,.28); background:rgba(255,255,255,.03);
       font-size:14px; line-height:1; font-weight:700; color:#e9d7b2; cursor:pointer;
       padding:0; transition:transform .12s ease, border-color .12s ease, background .12s ease;
     }
-    .qe-stat-step:hover { transform:scale(1.06); }
+    .qe-stat-step.minus { transform:translateX(-1px); }
+    .qe-stat-step.plus { transform:translateX(-1px); }
+    .qe-stat-step:hover { transform:translateX(-1px) scale(1.06); }
     .qe-stat-step.minus { color:#efb0b0; border-color:rgba(184,94,94,.42); background:rgba(120,34,34,.16); }
     .qe-stat-step.plus { color:#b7ebbb; border-color:rgba(88,160,98,.42); background:rgba(34,92,48,.16); }
-    .qe-stat-icon { width:34px; height:34px; border-radius:999px; display:grid; place-items:center; border:1px solid rgba(201,168,109,.45); background:rgba(255,255,255,.04); font-size:17px; line-height:1; justify-self:center; }
+    .qe-stat-icon { width:34px; height:34px; border-radius:999px; display:grid; place-items:center; border:1px solid rgba(201,168,109,.45); background:rgba(255,255,255,.04); font-size:17px; line-height:1; justify-self:center; transform:translateX(-1px); }
     .qe-stat-label { font-size:10px; line-height:1.1; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); text-align:center; }
     .qe-stat-input { width:100%; min-width:0; text-align:center; padding:10px 6px; -moz-appearance:textfield; appearance:textfield; }
     .qe-stat-input::-webkit-outer-spin-button,
@@ -1317,6 +1387,31 @@ akan0002 = {
       el.onmousedown = (e) => e.stopPropagation();
       el.onclick = (e) => e.stopPropagation();
     }
+    function randomMonthDayDateValue(rawValue) {
+      const randomMonth = Math.floor(Math.random() * 12) + 1;
+      const randomDay = Math.floor(Math.random() * 29) + 1;
+      const value = String(rawValue || '').trim();
+      if (!value) return `1.${randomMonth}.${randomDay}`;
+      const parts = value.split('.').map((part) => part.trim());
+      if (parts.length === 1 && /^\d+$/.test(parts[0])) return `${parts[0]}.${randomMonth}.${randomDay}`;
+      if (parts.length === 2 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1])) return `${parts[0]}.${randomMonth}.${randomDay}`;
+      if (parts.length === 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1]) && /^\d+$/.test(parts[2])) return `${parts[0]}.${randomMonth}.${randomDay}`;
+      return `1.${randomMonth}.${randomDay}`;
+    }
+    function bindRandomMonthDayButton(buttonId, fieldId, updateKey) {
+      const button = document.getElementById(buttonId);
+      const field = document.getElementById(fieldId);
+      if (!button || !field) return;
+      button.onmousedown = (e) => e.stopPropagation();
+      button.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const nextValue = randomMonthDayDateValue(field.value);
+        field.value = nextValue;
+        updateSelectedCharacter({ [updateKey]: nextValue });
+        field.focus();
+      };
+    }
     function renderValidation() {
       const issues = validateCharacters(state.characters);
       if (!issues.length) { els.validationPanel.style.display = 'none'; return; }
@@ -1334,7 +1429,7 @@ akan0002 = {
       const relationIdOptions = state.characters.map((c) => c.id).filter((id) => id && id !== char.id).sort().map((id) => `<option value="${escapeHtml(id)}"></option>`).join('');
       const cultureOptions = uniqueSorted([...state.cultures, ...state.characters.map((c) => c.culture)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
       const religionOptions = uniqueSorted([...state.religions, ...state.characters.map((c) => c.religion)]).map((v) => `<option value="${escapeHtml(v)}"></option>`).join('');
-      els.editorHost.innerHTML = `<div class="panel"><div class="top-row" style="margin-bottom:16px;"><div><div class="title-top">Selected</div><div class="title-main">${escapeHtml(char.name || 'Unnamed')}</div></div><button class="danger" id="deleteSelectedBtn">Delete</button></div><datalist id="character-ids-list">${relationIdOptions}</datalist><datalist id="culture-list">${cultureOptions}</datalist><datalist id="religion-list">${religionOptions}</datalist><div class="stack"><div class="grid-2"><div class="field"><label>Character id</label><input id="field-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="field-dna" value="${escapeHtml(char.dna || '')}"></div></div><div class="grid-2"><div class="field"><label>Name</label><input id="field-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Gender</label><select id="field-gender"><option value="female" ${getGender(char) === 'female' ? 'selected' : ''}>Female</option><option value="male" ${getGender(char) === 'male' ? 'selected' : ''}>Male</option></select></div></div><div class="field"><label>Dynasty</label><input id="field-dynasty" value="${escapeHtml(char.dynasty)}"></div><div class="grid-2"><div class="field"><label>Birth date</label><input id="field-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label>Death date</label><input id="field-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div></div><div class="grid-2"><div class="field"><label>Culture</label><input id="field-culture" list="culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="field-religion" list="religion-list" value="${escapeHtml(char.religion)}"></div></div><div class="grid-2"><div class="field"><label>Father</label><input id="field-father" list="character-ids-list" value="${escapeHtml(char.father)}"></div><div class="field"><label>Mother</label><input id="field-mother" list="character-ids-list" value="${escapeHtml(char.mother)}"></div></div><div class="field"><label>Spouse</label><input id="field-spouse" list="character-ids-list" value="${escapeHtml(char.spouse)}"></div><div class="grid-2"><div class="field"><label>Marriage date</label><input id="field-marriage" value="${escapeHtml(char.marriageDate)}"></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="field-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label></div><div class="field"><label>Traits</label><textarea id="field-traits" placeholder="example:
+      els.editorHost.innerHTML = `<div class="panel"><div class="top-row" style="margin-bottom:16px;"><div><div class="title-top">Selected</div><div class="title-main">${escapeHtml(char.name || 'Unnamed')}</div></div><button class="danger" id="deleteSelectedBtn">Delete</button></div><datalist id="character-ids-list">${relationIdOptions}</datalist><datalist id="culture-list">${cultureOptions}</datalist><datalist id="religion-list">${religionOptions}</datalist><div class="stack"><div class="grid-2"><div class="field"><label>Character id</label><input id="field-id" value="${escapeHtml(char.id)}"></div><div class="field"><label>DNA</label><input id="field-dna" value="${escapeHtml(char.dna || '')}"></div></div><div class="grid-2"><div class="field"><label>Name</label><input id="field-name" value="${escapeHtml(char.name)}"></div><div class="field"><label>Gender</label><select id="field-gender"><option value="female" ${getGender(char) === 'female' ? 'selected' : ''}>Female</option><option value="male" ${getGender(char) === 'male' ? 'selected' : ''}>Male</option></select></div></div><div class="field"><label>Dynasty</label><input id="field-dynasty" value="${escapeHtml(char.dynasty)}"></div><div class="grid-2"><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Birth date</span><button type="button" id="field-birth-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-birth" value="${escapeHtml(char.birthDate)}"></div><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>Death date</span><button type="button" id="field-death-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-death" placeholder="e.g. 1453.5.29" value="${escapeHtml(char.deathDate)}"></div></div><div class="grid-2"><div class="field"><label>Culture</label><input id="field-culture" list="culture-list" value="${escapeHtml(char.culture)}"></div><div class="field"><label>Religion</label><input id="field-religion" list="religion-list" value="${escapeHtml(char.religion)}"></div></div><div class="grid-2"><div class="field"><label>Father</label><input id="field-father" list="character-ids-list" value="${escapeHtml(char.father)}"></div><div class="field"><label>Mother</label><input id="field-mother" list="character-ids-list" value="${escapeHtml(char.mother)}"></div></div><div class="field"><label>Spouse</label><input id="field-spouse" list="character-ids-list" value="${escapeHtml(char.spouse)}"></div><div class="grid-2"><div class="field"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-size:10px; white-space:nowrap;">Marriage date</span><button type="button" id="field-marriage-randomize" style="flex:0 0 auto;padding:3px 7px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></label><input id="field-marriage" value="${escapeHtml(char.marriageDate)}"></div><label style="display:flex;align-items:center;justify-content:flex-start;gap:12px;border-radius:16px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.2);padding:12px 16px;font-size:14px;color:#f3dfb8;"><input id="field-matrilineal" type="checkbox" ${char.matrilineal ? 'checked' : ''} style="width:auto;flex:0 0 auto;"><span style="display:block;line-height:1.35;text-align:left;">Matrilineal marriage</span></label></div><div class="field"><label>Traits</label><textarea id="field-traits" placeholder="example:
 humble
 compassionate
 content
@@ -1347,6 +1442,8 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       bindValueInput('field-dynasty', (v) => updateSelectedCharacter({ dynasty: v }), 'blur');
       bindValueInput('field-birth', (v) => updateSelectedCharacter({ birthDate: String(v).trim() }), 'blur');
       bindValueInput('field-death', (v) => updateSelectedCharacter({ deathDate: String(v).trim() }), 'blur');
+      bindRandomMonthDayButton('field-birth-randomize', 'field-birth', 'birthDate');
+      bindRandomMonthDayButton('field-death-randomize', 'field-death', 'deathDate');
       bindValueInput('field-culture', (v) => updateSelectedCharacter({ culture: v }), 'blur');
       bindValueInput('field-religion', (v) => updateSelectedCharacter({ religion: v }), 'blur');
       bindValueInput('field-father', (v) => updateSelectedCharacter({ father: String(v).trim() }), 'blur');
@@ -1367,6 +1464,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         spouseField.onclick = (e) => e.stopPropagation();
       }
       bindValueInput('field-marriage', (v) => updateSelectedCharacter({ marriageDate: String(v).trim() }), 'blur');
+      bindRandomMonthDayButton('field-marriage-randomize', 'field-marriage', 'marriageDate');
       bindValueInput('field-matrilineal', (v) => updateSelectedCharacter({ matrilineal: !!v }), 'change');
       const traits = document.getElementById('field-traits');
       bindTraitsAutocomplete(traits);
