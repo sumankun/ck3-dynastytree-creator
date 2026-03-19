@@ -649,6 +649,23 @@ akan0002 = {
       if (!Number.isFinite(n)) return '';
       return Math.max(0, Math.round(n));
     }
+    function normalizeEmployerHistory(value, fallbackEmployer = '', fallbackEmployerDate = '') {
+      const history = [];
+      if (Array.isArray(value)) {
+        value.forEach((entry) => {
+          if (!entry || typeof entry !== 'object') return;
+          const date = String(entry.date || '').trim();
+          const employer = String(entry.employer || '').trim();
+          history.push({ date, employer });
+        });
+      }
+      const fallbackDate = String(fallbackEmployerDate || '').trim();
+      const fallbackId = String(fallbackEmployer || '').trim();
+      if (fallbackDate && fallbackId && !history.some((entry) => entry.date === fallbackDate && entry.employer === fallbackId)) {
+        history.push({ date: fallbackDate, employer: fallbackId });
+      }
+      return history;
+    }
     function normalizeCharacter(char) {
       const normalized = { ...char };
       normalized.gender = normalized.gender || 'female';
@@ -660,6 +677,10 @@ akan0002 = {
       else normalized.dynasty_house = '';
       normalized.disallow_random_traits = !!normalized.disallow_random_traits;
       normalized.sexuality = ['none', 'heterosexual', 'bisexual', 'homosexual', 'asexual'].includes(String(normalized.sexuality || '').trim()) ? String(normalized.sexuality || '').trim() : 'none';
+      normalized.employerHistory = normalizeEmployerHistory(normalized.employerHistory, normalized.employer, normalized.employerDate);
+      const latestEmployer = [...normalized.employerHistory].reverse().find((entry) => entry.date && entry.employer) || null;
+      normalized.employer = latestEmployer ? latestEmployer.employer : String(normalized.employer || '').trim();
+      normalized.employerDate = latestEmployer ? latestEmployer.date : String(normalized.employerDate || '').trim();
       CHARACTER_SKILLS.forEach(({ key }) => {
         normalized[key] = normalizeSkillValue(normalized[key]);
       });
@@ -978,13 +999,19 @@ akan0002 = {
       let updatedTarget = null;
       let next = state.characters.map((char) => {
         if (char !== target) return char;
-        updatedTarget = sanitizeRelationshipFields({ ...char, ...patch });
+        updatedTarget = sanitizeRelationshipFields(normalizeCharacter({ ...char, ...patch }));
         return updatedTarget;
       });
       if (isRenamingId) {
         next = next.map((char) => {
           const replaceLink = (value) => value === oldId ? newId : value;
-          return { ...char, father: replaceLink(char.father), mother: replaceLink(char.mother), spouse: replaceLink(char.spouse) };
+          return normalizeCharacter({
+            ...char,
+            father: replaceLink(char.father),
+            mother: replaceLink(char.mother),
+            spouse: replaceLink(char.spouse),
+            employerHistory: Array.isArray(char.employerHistory) ? char.employerHistory.map((entry) => ({ ...entry, employer: replaceLink(entry.employer) })) : [],
+          });
         });
       }
       state.characters = syncSpouseData(next, isRenamingId ? newId : oldId);
@@ -1004,7 +1031,7 @@ akan0002 = {
     function addCharacterAt(x, y) {
       const nextIdBase = `charid_${state.characters.length + 1}`;
       const nextId = state.characters.some((c) => c.id === nextIdBase) ? `${nextIdBase}_${Math.floor(Math.random() * 1000)}` : nextIdBase;
-      const newCharacter = { id: nextId, name: `Character${state.characters.length + 1}`, dynasty: '', dynasty_house: '', dynastyMode: 'dynasty', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, diplomacy: '', martial: '', stewardship: '', intrigue: '', learning: '', prowess: '', traits: [], disallow_random_traits: false, sexuality: 'none', x, y };
+      const newCharacter = { id: nextId, name: `Character${state.characters.length + 1}`, dynasty: '', dynasty_house: '', dynastyMode: 'dynasty', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, employerDate: '', employer: '', employerHistory: [], diplomacy: '', martial: '', stewardship: '', intrigue: '', learning: '', prowess: '', traits: [], disallow_random_traits: false, sexuality: 'none', x, y };
       state.characters.push(newCharacter);
       state.selectedId = newCharacter.id;
       state.contextMenu = null;
@@ -1093,7 +1120,7 @@ akan0002 = {
       return blocks.filter((block) => /^[A-Za-z0-9_\.\-]+$/.test(block.id));
     }
     function parseCK3CharacterBlock(rawId, body) {
-      const character = normalizeCharacter({ id: String(rawId || '').trim(), name: '', dynasty: '', dynasty_house: '', dynastyMode: 'dynasty', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, diplomacy: '', martial: '', stewardship: '', intrigue: '', learning: '', prowess: '', traits: [], disallow_random_traits: false, sexuality: 'none', x: 0, y: 0 });
+      const character = normalizeCharacter({ id: String(rawId || '').trim(), name: '', dynasty: '', dynasty_house: '', dynastyMode: 'dynasty', gender: 'male', dna: '', religion: '', culture: '', birthDate: '', deathDate: '', father: '', mother: '', spouse: '', marriageDate: '', matrilineal: false, employerDate: '', employer: '', employerHistory: [], diplomacy: '', martial: '', stewardship: '', intrigue: '', learning: '', prowess: '', traits: [], disallow_random_traits: false, sexuality: 'none', x: 0, y: 0 });
       const lines = String(body || '').replace(/\r\n?/g, '\n').split('\n');
       let depth = 0;
       let currentEventKey = '';
@@ -1108,6 +1135,12 @@ akan0002 = {
             const eventBody = singleLineEvent[2].trim();
             if (/\bbirth\s*=\s*yes\b/i.test(eventBody)) character.birthDate = eventDate;
             if (/\bdeath\s*=\s*yes\b/i.test(eventBody)) character.deathDate = eventDate;
+            const employer = eventBody.match(/\bemployer\s*=\s*([A-Za-z0-9_\.\-]+)/i);
+            if (employer) {
+              character.employerHistory.push({ date: eventDate, employer: employer[1] });
+              character.employer = employer[1];
+              character.employerDate = eventDate;
+            }
             const matri = eventBody.match(/\badd_matrilineal_spouse\s*=\s*([A-Za-z0-9_\.\-]+)/i);
             const spouse = eventBody.match(/\badd_spouse\s*=\s*([A-Za-z0-9_\.\-]+)/i);
             if (matri) {
@@ -1150,6 +1183,12 @@ akan0002 = {
         if (line.includes('{')) depth += (line.match(/\{/g) || []).length;
         if (/^birth\s*=\s*yes$/i.test(line) && currentEventKey) character.birthDate = currentEventKey;
         if (/^death\s*=\s*yes$/i.test(line) && currentEventKey) character.deathDate = currentEventKey;
+        const employerMatch = line.match(/^employer\s*=\s*([A-Za-z0-9_\.\-]+)$/i);
+        if (employerMatch && currentEventKey) {
+          character.employerHistory.push({ date: currentEventKey, employer: employerMatch[1] });
+          character.employer = employerMatch[1];
+          character.employerDate = currentEventKey;
+        }
         const matriMatch = line.match(/^add_matrilineal_spouse\s*=\s*([A-Za-z0-9_\.\-]+)$/i);
         const spouseMatch = line.match(/^add_spouse\s*=\s*([A-Za-z0-9_\.\-]+)$/i);
         if (matriMatch && currentEventKey) {
@@ -1211,6 +1250,8 @@ akan0002 = {
           father: remapRef(char.father || ''),
           mother: remapRef(char.mother || ''),
           spouse: remapRef(char.spouse || ''),
+          employer: remapRef(char.employer || ''),
+          employerHistory: Array.isArray(char.employerHistory) ? char.employerHistory.map((entry) => ({ ...entry, employer: remapRef(entry.employer || '') })) : [],
           traits: Array.isArray(char.traits) ? [...char.traits] : [],
           x: startX + col * xGap,
           y: startY + row * yGap,
@@ -1226,6 +1267,56 @@ akan0002 = {
       if (els.pasteCk3Textarea) els.pasteCk3Textarea.value = '';
       render();
       return added;
+    }
+
+    function parseCK3DateParts(value) {
+      const parts = String(value || '').trim().split('.').map((part) => Number(part));
+      if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) return null;
+      return parts;
+    }
+
+    function compareCK3Dates(a, b) {
+      const aParts = parseCK3DateParts(a);
+      const bParts = parseCK3DateParts(b);
+      if (!aParts || !bParts) return 0;
+      for (let i = 0; i < 3; i += 1) {
+        if (aParts[i] !== bParts[i]) return aParts[i] - bParts[i];
+      }
+      return 0;
+    }
+
+    function employerHistoryForCharacter(char) {
+      return normalizeEmployerHistory(char && char.employerHistory, char && char.employer, char && char.employerDate);
+    }
+
+    function quickEditEmployerHistoryForCharacter(char) {
+      if (char && Array.isArray(char.employerHistory)) {
+        return char.employerHistory.map((entry) => {
+          if (!entry || typeof entry !== 'object') return { date: '', employer: '' };
+          return {
+            date: String(entry.date || ''),
+            employer: String(entry.employer || ''),
+          };
+        });
+      }
+      return employerHistoryForCharacter(char);
+    }
+
+    function updateQuickEditEmployerHistory(charId, updater) {
+      const char = state.characters.find((c) => c.id === charId);
+      if (!char) return;
+      const currentHistory = quickEditEmployerHistoryForCharacter(char);
+      const nextHistory = Array.isArray(updater(currentHistory)) ? updater(currentHistory) : [];
+      const sanitizedHistory = nextHistory.map((entry) => ({
+        date: String((entry && entry.date) || '').trim(),
+        employer: String((entry && entry.employer) || '').trim(),
+      }));
+      const latestEmployer = [...sanitizedHistory].reverse().find((entry) => entry.date && entry.employer) || null;
+      updateCharacterById(charId, {
+        employerHistory: sanitizedHistory,
+        employer: latestEmployer ? latestEmployer.employer : '',
+        employerDate: latestEmployer ? latestEmployer.date : '',
+      });
     }
 
     function generateCK3Code(characters) {
@@ -1252,14 +1343,37 @@ akan0002 = {
         lines.push(`	${birthDate} = {`);
         lines.push(`		birth = yes`);
         lines.push(`	}`);
+
+        const midEvents = [];
+        const employerHistory = normalizeEmployerHistory(char.employerHistory, char.employer, char.employerDate).filter((entry) => entry.date && entry.employer);
+        employerHistory.forEach((entry) => {
+          midEvents.push({
+            type: 'employer',
+            date: entry.date,
+            lines: [
+              `	${entry.date} = {`,
+              `		employer = ${entry.employer}`,
+              `	}`,
+            ],
+          });
+        });
         if (char.spouse && char.marriageDate) {
           const shouldWriteMarriage = getGender(char) === 'female' ? char.matrilineal : !char.matrilineal;
           if (shouldWriteMarriage) {
-            lines.push(`	${char.marriageDate} = {`);
-            lines.push(`		${char.matrilineal ? 'add_matrilineal_spouse' : 'add_spouse'} = ${char.spouse}`);
-            lines.push(`	}`);
+            midEvents.push({
+              type: 'marriage',
+              date: char.marriageDate,
+              lines: [
+                `	${char.marriageDate} = {`,
+                `		${char.matrilineal ? 'add_matrilineal_spouse' : 'add_spouse'} = ${char.spouse}`,
+                `	}`,
+              ],
+            });
           }
         }
+        if (midEvents.length > 1) midEvents.sort((a, b) => compareCK3Dates(a.date, b.date));
+        midEvents.forEach((event) => lines.push(...event.lines));
+
         lines.push(`	${deathDate} = {`);
         lines.push(`		death = yes`);
         lines.push(`	}`);
@@ -1281,7 +1395,7 @@ akan0002 = {
     }
     function saveProjectJson() {
       syncTraitCacheFromCategories();
-      const payload = { version: 2, camera: state.camera, cultures: state.cultures, religions: state.religions, traits: state.traits, traitCategories: state.traitCategories, characters: state.characters.map(({ sex, ...char }) => normalizeCharacter(char)) };
+      const payload = { version: 3, camera: state.camera, cultures: state.cultures, religions: state.religions, traits: state.traits, traitCategories: state.traitCategories, characters: state.characters.map(({ sex, ...char }) => normalizeCharacter(char)) };
       const jsonText = JSON.stringify(payload, null, 2);
       if (window.showSaveFilePicker) {
         window.showSaveFilePicker({ suggestedName: 'ck3_tree_project.json', types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }] })
@@ -1362,6 +1476,20 @@ akan0002 = {
         const nextValue = randomMonthDayDateValue(field.value);
         field.value = nextValue;
         updateSelectedCharacter({ [updateKey]: nextValue });
+        field.focus();
+      };
+    }
+    function bindRandomMonthDayButtonWithHandler(buttonId, fieldId, handler) {
+      const button = document.getElementById(buttonId);
+      const field = document.getElementById(fieldId);
+      if (!button || !field) return;
+      button.onmousedown = (e) => e.stopPropagation();
+      button.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const nextValue = randomMonthDayDateValue(field.value);
+        field.value = nextValue;
+        handler(nextValue);
         field.focus();
       };
     }
@@ -1864,12 +1992,86 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       els.quickEditTitle.textContent = char.name || 'Unnamed';
       els.quickEditModal.style.display = 'grid';
       const skillFields = CHARACTER_SKILLS.map(({ key, label, icon }) => `<div class="qe-stat-card"><div class="qe-stat-head"><button type="button" class="qe-stat-step minus" data-skill-step="${key}" data-delta="-1" aria-label="Decrease ${escapeHtml(label)}">−</button><div class="qe-stat-icon" title="${escapeHtml(label)}">${icon}</div><button type="button" class="qe-stat-step plus" data-skill-step="${key}" data-delta="1" aria-label="Increase ${escapeHtml(label)}">+</button></div><input id="qe-${key}" class="qe-stat-input" type="number" min="0" step="1" inputmode="numeric" placeholder="—" value="${escapeHtml(char[key] === '' ? '' : String(char[key]))}"></div>`).join('');
-      els.quickEditBody.innerHTML = `<div class="qe-stats-grid">${skillFields}</div><label class="qe-toggle-row"><input id="qe-disallow-random-traits" type="checkbox" ${char.disallow_random_traits ? 'checked' : ''}><span>Disallow random traits</span></label><div class="field" style="margin-top:14px;"><label for="qe-sexuality">Sexuality</label><select id="qe-sexuality"><option value="none" ${char.sexuality === 'none' ? 'selected' : ''}>none</option><option value="heterosexual" ${char.sexuality === 'heterosexual' ? 'selected' : ''}>heterosexual</option><option value="bisexual" ${char.sexuality === 'bisexual' ? 'selected' : ''}>bisexual</option><option value="homosexual" ${char.sexuality === 'homosexual' ? 'selected' : ''}>homosexual</option><option value="asexual" ${char.sexuality === 'asexual' ? 'selected' : ''}>asexual</option></select></div>`;
+      const relationIdOptions = state.characters.map((c) => c.id).filter((id) => id && id !== char.id).sort().map((id) => `<option value="${escapeHtml(id)}"></option>`).join('');
+      const employerRows = quickEditEmployerHistoryForCharacter(char).map((entry, index) => `<div class="qe-employer-row" data-employer-index="${index}" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:${index === 0 ? '0' : '8px'};"><label style="display:flex;align-items:center;gap:8px;margin:0;white-space:nowrap;"><span>Date</span><span style="position:relative;display:inline-block;"><input data-employer-date="${index}" placeholder="e.g. 1066.10.1" value="${escapeHtml(entry.date || '')}" style="width:145px;padding-right:42px;"><button type="button" data-employer-randomize="${index}" style="position:absolute;top:-1px;right:0;padding:2px 6px;border-radius:999px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;font-size:10px;font-weight:700;line-height:1.1;cursor:pointer;">mm/dd</button></span></label><label style="display:flex;align-items:center;gap:8px;margin:0;white-space:nowrap;"><span>ID</span><input data-employer-id="${index}" list="qe-character-ids-list" value="${escapeHtml(entry.employer || '')}" style="width:140px;"></label><button type="button" data-employer-remove="${index}" style="padding:6px 10px;border-radius:10px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;cursor:pointer;">-</button></div>`).join('');
+      els.quickEditBody.innerHTML = `<datalist id="qe-character-ids-list">${relationIdOptions}</datalist><div class="qe-stats-grid">${skillFields}</div><label class="qe-toggle-row"><input id="qe-disallow-random-traits" type="checkbox" ${char.disallow_random_traits ? 'checked' : ''}><span>Disallow random traits</span></label><div class="field" style="margin-top:14px;"><label for="qe-sexuality">Sexuality</label><select id="qe-sexuality"><option value="none" ${char.sexuality === 'none' ? 'selected' : ''}>none</option><option value="heterosexual" ${char.sexuality === 'heterosexual' ? 'selected' : ''}>heterosexual</option><option value="bisexual" ${char.sexuality === 'bisexual' ? 'selected' : ''}>bisexual</option><option value="homosexual" ${char.sexuality === 'homosexual' ? 'selected' : ''}>homosexual</option><option value="asexual" ${char.sexuality === 'asexual' ? 'selected' : ''}>asexual</option></select></div><div class="field" style="margin-top:14px;"><div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-bottom:8px;"><label style="margin:0;">Employers</label><button type="button" id="qe-add-employer" style="padding:6px 10px;border-radius:10px;border:1px solid rgba(122,94,64,.75);background:rgba(0,0,0,.22);color:#f3dfb8;cursor:pointer;white-space:nowrap;flex:0 0 auto;">+</button></div><div id="qe-employer-list" style="margin-top:8px;max-height:216px;overflow-y:auto;overflow-x:hidden;padding-right:6px;">${employerRows || '<div style="opacity:.72;font-size:13px;">No employer entries yet.</div>'}</div></div>`;
       CHARACTER_SKILLS.forEach(({ key }) => {
         bindValueInput(`qe-${key}`, (v) => updateCharacterById(char.id, { [key]: normalizeSkillValue(v) }), 'blur');
       });
       bindValueInput('qe-disallow-random-traits', (v) => updateCharacterById(char.id, { disallow_random_traits: !!v }), 'change');
       bindValueInput('qe-sexuality', (v) => updateCharacterById(char.id, { sexuality: ['none', 'heterosexual', 'bisexual', 'homosexual', 'asexual'].includes(v) ? v : 'none' }), 'change');
+      const addEmployerBtn = document.getElementById('qe-add-employer');
+      if (addEmployerBtn) {
+        addEmployerBtn.onmousedown = (e) => e.stopPropagation();
+        addEmployerBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          updateQuickEditEmployerHistory(char.id, (history) => [...history, { date: '', employer: '' }]);
+        };
+      }
+      els.quickEditBody.querySelectorAll('[data-employer-date]').forEach((input) => {
+        input.onblur = () => {
+          const index = Number(input.dataset.employerDate || -1);
+          updateQuickEditEmployerHistory(char.id, (history) => history.map((entry, i) => i === index ? { ...entry, date: String(input.value || '').trim() } : entry));
+        };
+        input.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            input.blur();
+          }
+        };
+        input.onmousedown = (e) => e.stopPropagation();
+        input.onclick = (e) => e.stopPropagation();
+      });
+      els.quickEditBody.querySelectorAll('[data-employer-id]').forEach((input) => {
+        input.onfocus = () => {
+          const value = input.value;
+          const start = typeof input.selectionStart === 'number' ? input.selectionStart : null;
+          const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : null;
+          input.value = '';
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.value = value;
+          if (start !== null && end !== null) {
+            try { input.setSelectionRange(start, end); } catch (err) {}
+          }
+        };
+        input.onblur = () => {
+          const index = Number(input.dataset.employerId || -1);
+          updateQuickEditEmployerHistory(char.id, (history) => history.map((entry, i) => i === index ? { ...entry, employer: String(input.value || '').trim() } : entry));
+        };
+        input.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            input.blur();
+          }
+        };
+        input.onmousedown = (e) => e.stopPropagation();
+        input.onclick = (e) => e.stopPropagation();
+      });
+      els.quickEditBody.querySelectorAll('[data-employer-randomize]').forEach((button) => {
+        button.onmousedown = (e) => e.stopPropagation();
+        button.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const index = Number(button.dataset.employerRandomize || -1);
+          const field = els.quickEditBody.querySelector(`[data-employer-date="${index}"]`);
+          if (!field) return;
+          const nextValue = randomMonthDayDateValue(field.value);
+          field.value = nextValue;
+          updateQuickEditEmployerHistory(char.id, (history) => history.map((entry, i) => i === index ? { ...entry, date: nextValue } : entry));
+        };
+      });
+      els.quickEditBody.querySelectorAll('[data-employer-remove]').forEach((button) => {
+        button.onmousedown = (e) => e.stopPropagation();
+        button.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const index = Number(button.dataset.employerRemove || -1);
+          updateQuickEditEmployerHistory(char.id, (history) => history.filter((_, i) => i !== index));
+        };
+      });
       els.quickEditBody.querySelectorAll('[data-skill-step]').forEach((btn) => {
         btn.onmousedown = (e) => e.stopPropagation();
         btn.onclick = (e) => {
