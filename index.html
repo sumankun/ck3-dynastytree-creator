@@ -247,6 +247,33 @@
         linear-gradient(145deg, rgba(24,16,46,.96), rgba(12,11,24,.94) 48%, rgba(27,15,54,.96));
     }
     .card.selected { border-color: var(--gold); box-shadow: 0 20px 45px rgba(143,99,255,.3); }
+    body.perf-lite .sidebar,
+    body.perf-lite .validation-float,
+    body.perf-lite .toolbar,
+    body.perf-lite .modal-backdrop,
+    body.perf-lite .context-menu,
+    body.perf-lite .trait-picker-modal,
+    body.perf-lite .card {
+      backdrop-filter: none !important;
+    }
+    body.perf-lite .card {
+      box-shadow: 0 10px 22px rgba(0,0,0,.22);
+      background: linear-gradient(145deg, rgba(24,16,46,.96), rgba(12,11,24,.94) 48%, rgba(27,15,54,.96));
+    }
+    body.perf-lite .card.selected {
+      box-shadow: 0 10px 24px rgba(143,99,255,.18);
+    }
+    body.perf-lite .card::before {
+      background: linear-gradient(180deg, rgba(255,255,255,.04), transparent 34%, transparent 74%, rgba(0,0,0,.12));
+    }
+    body.perf-lite .card::after {
+      opacity: .45;
+    }
+    body.perf-lite button,
+    body.perf-lite .fake-label,
+    body.perf-lite .qe-stat-step {
+      transition: none;
+    }
     .card::before {
       content: ""; position: absolute; inset: 0;
       background: linear-gradient(180deg, rgba(255,255,255,.07), transparent 30%, transparent 70%, rgba(0,0,0,.15));
@@ -1843,10 +1870,45 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         render();
       };
     }
+    function isPerformanceMode() {
+      return state.characters.length >= 30;
+    }
+    function syncPerformanceModeClass() {
+      document.body.classList.toggle('perf-lite', isPerformanceMode());
+    }
+    function getExpandedViewportBounds(extraMargin = 0) {
+      const rect = els.stage.getBoundingClientRect();
+      const margin = Math.max(220, extraMargin);
+      const left = (-state.camera.x - margin) / state.camera.zoom;
+      const top = (-state.camera.y - margin) / state.camera.zoom;
+      const right = (rect.width - state.camera.x + margin) / state.camera.zoom;
+      const bottom = (rect.height - state.camera.y + margin) / state.camera.zoom;
+      return { left, top, right, bottom };
+    }
+    function isCharacterWithinBounds(character, bounds) {
+      return character.x + CARD_WIDTH >= bounds.left
+        && character.x <= bounds.right
+        && character.y + CARD_HEIGHT >= bounds.top
+        && character.y <= bounds.bottom;
+    }
+    function getRenderableCharacterIds(bounds = getExpandedViewportBounds()) {
+      const ids = new Set();
+      visibleCharacters().forEach((character) => {
+        if (isCharacterWithinBounds(character, bounds)) ids.add(character.id);
+      });
+      const selected = selectedCharacter();
+      if (selected) ids.add(selected.id);
+      const quick = quickEditCharacter();
+      if (quick) ids.add(quick.id);
+      return ids;
+    }
     function renderCards() {
       const list = visibleCharacters();
+      const renderableIds = getRenderableCharacterIds(getExpandedViewportBounds(isPerformanceMode() ? 260 : 320));
+      const fragment = document.createDocumentFragment();
       els.cardLayer.innerHTML = '';
       list.forEach((character) => {
+        if (!renderableIds.has(character.id)) return;
         const div = document.createElement('div');
         div.className = `card ${state.selectedId === character.id ? 'selected' : ''}`;
         div.style.transform = `translate(${state.camera.x + character.x * state.camera.zoom}px, ${state.camera.y + character.y * state.camera.zoom}px) scale(${state.camera.zoom})`;
@@ -1871,14 +1933,19 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         div.querySelector('.edit-btn').onclick = (e) => { e.stopPropagation(); state.quickEditId = character.id; renderQuickEdit(); };
         div.querySelector('.sex-badge').onmousedown = (e) => e.stopPropagation();
         div.querySelector('.sex-badge').onclick = (e) => { e.stopPropagation(); updateCharacterById(character.id, { gender: getGender(character) === 'female' ? 'male' : 'female', sex: undefined }); };
-        els.cardLayer.appendChild(div);
+        fragment.appendChild(div);
       });
+      els.cardLayer.appendChild(fragment);
     }
     function renderLines() {
       els.lineLayer.innerHTML = '';
 
       const byId = Object.fromEntries(state.characters.map((c) => [c.id, c]));
       const zoom = state.camera.zoom;
+      const lineFragment = document.createDocumentFragment();
+      const bounds = getExpandedViewportBounds(isPerformanceMode() ? 520 : 680);
+      const renderableIds = getRenderableCharacterIds(bounds);
+      const shouldRenderCharacterLinks = (character) => !!(character && renderableIds.has(character.id));
 
       function screenX(worldX) {
         return state.camera.x + worldX * zoom;
@@ -1948,20 +2015,20 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         fill.setAttribute('fill-opacity', '0.96');
         fill.setAttribute('transform', `translate(${midX} ${midY}) rotate(${angle})`);
 
-        els.lineLayer.appendChild(outline);
-        els.lineLayer.appendChild(fill);
+        lineFragment.appendChild(outline);
+        lineFragment.appendChild(fill);
       }
 
       function appendMarriageCurve(x1, y1, x2, y2) {
         const dx = Math.abs(x2 - x1) * 0.38 + 40;
         const pathD = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-        els.lineLayer.appendChild(makePath(pathD, '#e2bc63', 10, 0.16));
-        els.lineLayer.appendChild(makePath(pathD, '#e2bc63', 2.8, 0.88));
+        lineFragment.appendChild(makePath(pathD, '#e2bc63', 10, 0.16));
+        lineFragment.appendChild(makePath(pathD, '#e2bc63', 2.8, 0.88));
       }
 
       function appendBloodLine(x1, y1, x2, y2, addArrow = false, width = 2.6) {
-        els.lineLayer.appendChild(makeLine(x1, y1, x2, y2, '#71f0a5', width + 5.2, 0.16));
-        els.lineLayer.appendChild(makeLine(x1, y1, x2, y2, '#71f0a5', width, 0.88, '8 5'));
+        lineFragment.appendChild(makeLine(x1, y1, x2, y2, '#71f0a5', width + 5.2, 0.16));
+        lineFragment.appendChild(makeLine(x1, y1, x2, y2, '#71f0a5', width, 0.88, '8 5'));
         if (addArrow) appendBloodArrow(x1, y1, x2, y2);
       }
 
@@ -1969,8 +2036,8 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         const dy = y2 - y1;
         const bendY = Math.max(26 * zoom, Math.min(Math.abs(dy) * 0.45, 120 * zoom));
         const pathD = `M ${x1} ${y1} C ${x1} ${y1 + bendY}, ${x2} ${y2 - bendY}, ${x2} ${y2}`;
-        els.lineLayer.appendChild(makePath(pathD, '#71f0a5', width + 5.2, 0.16));
-        els.lineLayer.appendChild(makePath(pathD, '#71f0a5', width, 0.88, '8 5'));
+        lineFragment.appendChild(makePath(pathD, '#71f0a5', width + 5.2, 0.16));
+        lineFragment.appendChild(makePath(pathD, '#71f0a5', width, 0.88, '8 5'));
         if (addArrow) appendBloodArrow(x1, y1, x2, y2);
       }
 
@@ -1978,6 +2045,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
 
       state.characters.forEach((char) => {
         if (!char.spouse || !byId[char.spouse] || char.id > char.spouse) return;
+        if (!shouldRenderCharacterLinks(char) && !shouldRenderCharacterLinks(byId[char.spouse])) return;
 
         const spouse = byId[char.spouse];
         const x1 = screenX(char.x + CARD_WIDTH / 2);
@@ -2015,6 +2083,10 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       familyGroups.forEach((group) => {
         const { father, mother, children } = group;
         if (!children.length) return;
+        const hasRenderableMember = shouldRenderCharacterLinks(father)
+          || shouldRenderCharacterLinks(mother)
+          || children.some((child) => shouldRenderCharacterLinks(child));
+        if (!hasRenderableMember) return;
 
         const childPoints = children.map((child) => ({
           child,
@@ -2059,7 +2131,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
           const safeHubY = Math.max(originY + 24 * zoom, hubY);
 
           appendBloodLine(originX, originY, originX, safeHubY, false, 2.8);
-          els.lineLayer.appendChild(makeCircle(originX, safeHubY, 3.4, '#71f0a5', 0.95));
+          lineFragment.appendChild(makeCircle(originX, safeHubY, 3.4, '#71f0a5', 0.95));
 
           childPoints.forEach(({ x, y }) => {
             appendBloodCurve(originX, safeHubY, x, y, true, 2.4);
@@ -2085,12 +2157,14 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         const safeHubY = Math.max(parentY + 18 * zoom, hubY);
 
         appendBloodLine(parentX, parentY, parentX, safeHubY, false, 2.8);
-        els.lineLayer.appendChild(makeCircle(parentX, safeHubY, 3.4, '#71f0a5', 0.95));
+        lineFragment.appendChild(makeCircle(parentX, safeHubY, 3.4, '#71f0a5', 0.95));
 
         childPoints.forEach(({ x, y }) => {
           appendBloodCurve(parentX, safeHubY, x, y, true, 2.4);
         });
       });
+
+      els.lineLayer.appendChild(lineFragment);
     }
     function renderQuickEdit() {
       const char = quickEditCharacter();
@@ -2291,6 +2365,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       }
     }
     function renderStageOnly() {
+      syncPerformanceModeClass();
       renderCards();
       renderLines();
       renderOverlayState();
@@ -2312,6 +2387,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       });
     }
     function render() {
+      syncPerformanceModeClass();
       if (els.searchInput) els.searchInput.value = state.search;
       renderValidation();
       renderEditorPanel();
