@@ -238,11 +238,7 @@
     .stat { border-radius: 12px; border: 1px solid rgba(117,88,63,.7); background: rgba(0,0,0,.2); padding: 8px 12px; font-size: 12px; }
     .stat-title { color: var(--muted); }
     .stat-value { margin-top: 4px; color: #f4e3bf; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-line { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #dbc59f; margin-top: 12px; }
-    .card-line.small-gap { margin-top: 8px; }
     .card-bottom { margin-top: auto; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .traits-preview { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
-    .drag-pill { border-radius: 999px; border: 1px solid rgba(140,106,73,.7); padding: 4px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .2em; color: #e6cf9f; }
     .edit-btn {
       position: absolute; right: 12px; top: 12px; z-index: 3; width: 32px; height: 32px;
       display: flex; align-items: center; justify-content: center; padding: 0;
@@ -1744,7 +1740,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         const div = document.createElement('div');
         div.className = `card ${state.selectedId === character.id ? 'selected' : ''}`;
         div.style.transform = `translate(${state.camera.x + character.x * state.camera.zoom}px, ${state.camera.y + character.y * state.camera.zoom}px) scale(${state.camera.zoom})`;
-        div.innerHTML = `<button class="edit-btn" type="button" aria-label="Open extra info"><span class="edit-btn-icon">✎</span></button><div class="card-inner"><div class="card-top"><div><div class="card-sub">Character</div><div class="card-name">${escapeHtml(character.name || 'Unnamed')}</div><div class="card-id">${escapeHtml(character.id || 'no_id_yet')}</div></div><button class="sex-badge ${getGender(character) === 'female' ? 'sex-f' : 'sex-m'}" type="button">${getGender(character) === 'female' ? 'F' : 'M'}</button></div><div class="card-stats"><div class="stat"><div class="stat-title">${character.dynasty_house ? 'Dynasty house' : 'Dynasty'}</div><div class="stat-value">${escapeHtml(character.dynasty_house || character.dynasty || '—')}</div></div><div class="stat"><div class="stat-title">Birth</div><div class="stat-value">${escapeHtml(character.birthDate || '—')}</div></div></div><div class="card-line"><span style="color:#8cffb6;">👥</span><span>${character.father || character.mother ? 'Blood links' : 'No parents set'}</span></div><div class="card-line small-gap"><span style="color:#ffd25f;">❤</span><span>${escapeHtml(character.spouse || 'No spouse set')}</span></div><div class="card-bottom"><div class="traits-preview">${escapeHtml(character.traits.slice(0, 2).join(', ') || 'No traits')}</div><div class="drag-pill">Drag</div></div></div>`;
+        div.innerHTML = `<button class="edit-btn" type="button" aria-label="Open extra info"><span class="edit-btn-icon">✎</span></button><div class="card-inner"><div class="card-top"><div><div class="card-sub">Character</div><div class="card-name">${escapeHtml(character.name || 'Unnamed')}</div><div class="card-id">${escapeHtml(character.id || 'no_id_yet')}</div></div><button class="sex-badge ${getGender(character) === 'female' ? 'sex-f' : 'sex-m'}" type="button">${getGender(character) === 'female' ? 'F' : 'M'}</button></div><div class="card-stats"><div class="stat"><div class="stat-title">${character.dynasty_house ? 'Dynasty house' : 'Dynasty'}</div><div class="stat-value">${escapeHtml(character.dynasty_house || character.dynasty || '—')}</div></div><div class="stat"><div class="stat-title">Birth</div><div class="stat-value">${escapeHtml(character.birthDate || '—')}</div></div></div></div>`;
         div.onclick = (e) => {
           e.stopPropagation();
           if (state.selectedId !== character.id) commitActiveEditorField();
