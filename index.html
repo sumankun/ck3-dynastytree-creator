@@ -1417,7 +1417,7 @@ akan0002 = {
       return characters.map((char) => {
         const lines = [];
         const birthDate = String(char.birthDate || '').trim() || '1.1.1';
-        const deathDate = String(char.deathDate || '').trim() || '1.1.2';
+        const deathDate = String(char.deathDate || '').trim();
         lines.push(`${char.id || 'character_id'} = {`);
         if (char.name) lines.push(`	name = "${escapeCK3String(char.name)}"`);
         if (char.dynasty_house) lines.push(`	dynasty_house = ${char.dynasty_house}`);
@@ -1468,9 +1468,11 @@ akan0002 = {
         if (midEvents.length > 1) midEvents.sort((a, b) => compareCK3Dates(a.date, b.date));
         midEvents.forEach((event) => lines.push(...event.lines));
 
-        lines.push(`	${deathDate} = {`);
-        lines.push(`		death = yes`);
-        lines.push(`	}`);
+        if (deathDate) {
+          lines.push(`	${deathDate} = {`);
+          lines.push(`		death = yes`);
+          lines.push(`	}`);
+        }
         lines.push(`}`);
         return lines.join('\n');
       }).join('\n');
