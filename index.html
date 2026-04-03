@@ -186,13 +186,45 @@
       padding: 8px 10px; font-size: 11px; color: #cdb78f;
     }
     .warning-list {
-      max-height: 144px; overflow-y: auto; display: grid; gap: 8px; border-radius: 16px;
+      max-height: 220px; overflow-y: auto; display: grid; gap: 8px; border-radius: 16px;
       border: 1px solid rgba(95,74,51,.7); background: rgba(9,8,17,.65); padding: 12px;
     }
-    .issue { display: flex; gap: 8px; align-items: flex-start; border-radius: 12px; padding: 8px 10px; font-size: 14px; }
+    .issue { display: flex; gap: 8px; align-items: flex-start; border-radius: 12px; padding: 8px 10px; font-size: 13px; }
     .issue.error { background: rgba(42,19,22,.6); color: #ffcbc4; }
     .issue.warning { background: rgba(42,36,19,.6); color: var(--warn); }
+    .validation-float {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      z-index: 24;
+      width: min(360px, calc(100vw - 438px));
+      max-height: min(46vh, 420px);
+      overflow: hidden;
+      padding: 14px;
+      border-radius: 22px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 42px rgba(0,0,0,.38);
+    }
+    .validation-float .title-main-small {
+      margin-top: 4px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #f3dfb8;
+    }
+    .validation-float .warning-list {
+      max-height: 125px;
+      padding: 10px;
+    }
+    .validation-float .issue {
+      padding: 7px 9px;
+      font-size: 12px;
+    }
     .main { position: relative; flex: 1; overflow: hidden; }
+    @media (max-width: 980px) {
+      .validation-float {
+        width: min(320px, calc(100vw - 32px));
+      }
+    }
     .toolbar {
       position: absolute; left: 16px; top: 16px; z-index: 20; display: flex; align-items: center; gap: 8px;
       border-radius: 16px; border: 1px solid rgba(132,100,69,.6); background: rgba(11,9,23,.78);
@@ -362,13 +394,14 @@
   <div class="app">
     <aside class="sidebar">
       <div class="panel-scroll">
-        <div class="panel" id="validationPanel" style="display:none;"></div>
         <div id="editorHost"></div>
       </div>
     </aside>
     <main class="main">
+      <div class="panel validation-float" id="validationPanel" style="display:none;"></div>
       <div style="position:absolute;right:16px;top:16px;z-index:25;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:560px;">
+        <div style="display:flex;gap:6px;flex-wrap:nowrap;justify-content:flex-end;max-width:none;white-space:nowrap;">
+          <button id="validationSettingsBtn" title="Validation settings" aria-label="Validation settings" style="padding:6px 8px;font-size:12px;border-radius:12px;min-width:34px;">⚙</button>
           <button id="saveJsonBtn" style="padding:6px 8px;font-size:12px;border-radius:12px;">💾 Save JSON</button>
           <label class="fake-label" for="loadJsonInput" style="padding:6px 8px;font-size:12px;border-radius:12px;">📂 Load JSON</label>
           <input id="loadJsonInput" type="file" accept="application/json" hidden />
@@ -388,6 +421,7 @@
         </button>
         <div id="databaseDropdown" class="panel" style="display:none;width:320px;max-width:calc(100vw - 440px);padding:12px;"></div>
         <div id="saveStatus" class="status" style="display:none;width:220px;max-width:220px;"></div>
+        
       </div>
       <div class="toolbar">
         <button class="mini" id="zoomInBtn">＋</button>
@@ -399,6 +433,18 @@
         <div id="cardLayer"></div>
       </div>
     </main>
+  </div>
+  <div id="validationSettingsModal" class="modal-backdrop" style="display:none;">
+    <div class="modal small" style="max-width:640px;">
+      <div class="top-row" style="margin-bottom:16px;align-items:center;">
+        <div>
+          <div class="title-top">Validation</div>
+          <div class="title-main">Settings</div>
+        </div>
+        <button id="closeValidationSettingsBtn">✕</button>
+      </div>
+      <div id="validationSettingsDropdown"></div>
+    </div>
   </div>
   <div id="contextMenu" class="context-menu" style="display:none;">
     <button id="createHereBtn" style="width:100%;justify-content:flex-start;">➕ Create character</button>
@@ -564,6 +610,36 @@ akan0002 = {
       return base;
     }
     const DEFAULT_TRAIT_CATEGORIES = normalizeTraitCategories(RAW_DEFAULT_TRAIT_CATEGORIES);
+    const VALIDATION_SETTINGS_STORAGE_KEY = 'ck3-tree-forge-validation-settings';
+    const DEFAULT_VALIDATION_SETTINGS = {
+      showPanel: true,
+      warnMissingBirthDate: true,
+      warnMissingDeathDate: true,
+    };
+    function normalizeValidationSettings(raw) {
+      return {
+        showPanel: raw && typeof raw.showPanel === 'boolean' ? raw.showPanel : DEFAULT_VALIDATION_SETTINGS.showPanel,
+        warnMissingBirthDate: raw && typeof raw.warnMissingBirthDate === 'boolean' ? raw.warnMissingBirthDate : DEFAULT_VALIDATION_SETTINGS.warnMissingBirthDate,
+        warnMissingDeathDate: raw && typeof raw.warnMissingDeathDate === 'boolean' ? raw.warnMissingDeathDate : DEFAULT_VALIDATION_SETTINGS.warnMissingDeathDate,
+      };
+    }
+    function loadValidationSettings() {
+      try {
+        const raw = localStorage.getItem(VALIDATION_SETTINGS_STORAGE_KEY);
+        if (!raw) return normalizeValidationSettings();
+        return normalizeValidationSettings(JSON.parse(raw));
+      } catch (error) {
+        console.warn('Could not load validation settings.', error);
+        return normalizeValidationSettings();
+      }
+    }
+    function saveValidationSettings() {
+      try {
+        localStorage.setItem(VALIDATION_SETTINGS_STORAGE_KEY, JSON.stringify(state.validationSettings));
+      } catch (error) {
+        console.warn('Could not save validation settings.', error);
+      }
+    }
     const state = {
       characters: [],
       selectedId: null,
@@ -580,6 +656,8 @@ akan0002 = {
       traitPendingAdd: "",
       characterTraitPickerOpen: false,
       saveStatus: "",
+      validationSettingsOpen: false,
+      validationSettings: loadValidationSettings(),
       contextMenu: null,
       draggingNodeId: null,
       panning: false,
@@ -592,6 +670,8 @@ akan0002 = {
       databaseDropdown: document.getElementById("databaseDropdown"),
       databaseChevron: document.getElementById("databaseChevron"),
       saveStatus: document.getElementById("saveStatus"),
+      validationSettingsDropdown: document.getElementById("validationSettingsDropdown"),
+      validationSettingsModal: document.getElementById("validationSettingsModal"),
       lineLayer: document.getElementById("lineLayer"),
       cardLayer: document.getElementById("cardLayer"),
       stage: document.getElementById("stage"),
@@ -958,8 +1038,8 @@ akan0002 = {
       chars.forEach((char) => {
         const label = char.id || char.name || 'Character';
         if (char.id && ids.get(char.id) > 1) issues.push({ type: 'error', message: `Duplicate id found: ${char.id}` });
-        if (!char.birthDate) issues.push({ type: 'warning', message: `${label}: birth date is empty.` });
-        if (!char.deathDate) issues.push({ type: 'warning', message: `${label}: death date is empty.` });
+        if (state.validationSettings.warnMissingBirthDate && !char.birthDate) issues.push({ type: 'warning', message: `${label}: birth date is empty.` });
+        if (state.validationSettings.warnMissingDeathDate && !char.deathDate) issues.push({ type: 'warning', message: `${label}: death date is empty.` });
         if (char.spouse && !char.marriageDate) issues.push({ type: 'warning', message: `${label}: spouse is set but marriage date is empty.` });
         if (char.deathDate && char.birthDate && char.deathDate === char.birthDate) issues.push({ type: 'warning', message: `${label}: birth and death dates are identical.` });
       });
@@ -1219,6 +1299,22 @@ akan0002 = {
       takenIds.add(nextId);
       return nextId;
     }
+    function syncReciprocalSpouses(characters, preferredIds = []) {
+      const byId = new Map(characters.map((char) => [char.id, char]));
+      const preferredSet = new Set(Array.isArray(preferredIds) ? preferredIds : []);
+      characters.forEach((char) => {
+        const spouseId = String(char && char.spouse || '').trim();
+        if (!spouseId) return;
+        const partner = byId.get(spouseId);
+        if (!partner || partner.id === char.id) return;
+        const partnerSpouseId = String(partner.spouse || '').trim();
+        const shouldOverwrite = !partnerSpouseId || partnerSpouseId === char.id || (preferredSet.has(char.id) && !preferredSet.has(partner.id));
+        if (!shouldOverwrite) return;
+        partner.spouse = char.id;
+        if (!partner.marriageDate && char.marriageDate) partner.marriageDate = char.marriageDate;
+        if (typeof partner.matrilineal !== 'boolean') partner.matrilineal = !!char.matrilineal;
+      });
+    }
     function importCK3Characters(text) {
       const blocks = extractTopLevelCK3Blocks(text);
       if (!blocks.length) throw new Error('No CK3 character blocks found.');
@@ -1253,7 +1349,9 @@ akan0002 = {
           y: startY + row * yGap,
         });
       });
-      state.characters = state.characters.concat(added);
+      const mergedCharacters = state.characters.concat(added);
+      syncReciprocalSpouses(mergedCharacters, added.map((char) => char.id));
+      state.characters = mergedCharacters;
       state.cultures = uniqueSorted([...state.cultures, ...added.map((c) => c.culture)]);
       state.religions = uniqueSorted([...state.religions, ...added.map((c) => c.religion)]);
       added.flatMap((c) => c.traits || []).forEach((trait) => upsertTraitCategory(trait, 'other'));
@@ -1514,11 +1612,21 @@ akan0002 = {
     }
 
     function renderValidation() {
+      if (!state.validationSettings.showPanel) {
+        els.validationPanel.style.display = 'none';
+        els.validationPanel.innerHTML = '';
+        return;
+      }
       const issues = validateCharacters(state.characters);
-      if (!issues.length) { els.validationPanel.style.display = 'none'; return; }
+      if (!issues.length) {
+        els.validationPanel.style.display = 'none';
+        els.validationPanel.innerHTML = '';
+        return;
+      }
       els.validationPanel.style.display = 'block';
       const hasErrors = issues.some((i) => i.type === 'error');
-      els.validationPanel.innerHTML = `<div class="top-row" style="margin-bottom:12px;align-items:center;"><div><div class="title-top">Validation</div><div style="margin-top:6px;font-size:18px;font-weight:700;color:#f3dfb8;">Project Health</div></div><div style="border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;border:${hasErrors ? '1px solid #9b4b4b' : '1px solid #7c6840'};background:${hasErrors ? 'rgba(49,19,24,.7)' : 'rgba(42,36,19,.7)'};color:${hasErrors ? '#ffbcb3' : '#f0ddb0'};">${hasErrors ? 'Needs fixes' : 'Warnings'}</div></div><div class="warning-list">${issues.map((issue) => `<div class="issue ${issue.type}"><span>⚠</span><span>${escapeHtml(issue.message)}</span></div>`).join('')}</div>`;
+      const badgeLabel = hasErrors ? 'Needs fixes' : 'Warnings';
+      els.validationPanel.innerHTML = `<div class="top-row" style="margin-bottom:10px;align-items:center;gap:10px;"><div><div class="title-top">Validation</div><div class="title-main-small">Project Health</div></div><div style="border-radius:999px;padding:5px 10px;font-size:11px;font-weight:700;border:${hasErrors ? '1px solid #9b4b4b' : '1px solid #7c6840'};background:${hasErrors ? 'rgba(49,19,24,.7)' : 'rgba(42,36,19,.7)'};color:${hasErrors ? '#ffbcb3' : '#f0ddb0'};white-space:nowrap;">${badgeLabel}</div></div><div class="warning-list">${issues.map((issue) => `<div class="issue ${issue.type}"><span>⚠</span><span>${escapeHtml(issue.message)}</span></div>`).join('')}</div>`;
     }
     function renderEditorPanel() {
       const char = selectedCharacter();
@@ -2122,9 +2230,58 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
         };
       });
     }
+    function renderValidationSettingsDropdown() {
+      if (!els.validationSettingsDropdown || !els.validationSettingsModal) return;
+      if (!state.validationSettingsOpen) {
+        els.validationSettingsModal.style.display = 'none';
+        els.validationSettingsDropdown.innerHTML = '';
+        return;
+      }
+      const settings = state.validationSettings;
+      els.validationSettingsModal.style.display = 'grid';
+      els.validationSettingsDropdown.innerHTML = `<div class="stack" style="gap:10px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;border-radius:14px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.18);padding:10px 12px;font-size:13px;color:#f3dfb8;cursor:pointer;">
+          <input id="validation-setting-show-panel" type="checkbox" ${settings.showPanel ? 'checked' : ''} style="width:auto;flex:0 0 auto;margin-top:2px;">
+          <span style="display:grid;gap:3px;">
+            <span>Show validation window</span>
+            <span style="font-size:11px;color:#cdb78f;line-height:1.35;">Hide or show the floating validation widget.</span>
+          </span>
+        </label>
+        <div style="display:grid;gap:8px;opacity:${settings.showPanel ? '1' : '.55'};">
+          <label style="display:flex;align-items:flex-start;gap:10px;border-radius:14px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.18);padding:10px 12px;font-size:13px;color:#f3dfb8;cursor:pointer;">
+            <input id="validation-setting-birth" type="checkbox" ${settings.warnMissingBirthDate ? 'checked' : ''} style="width:auto;flex:0 0 auto;margin-top:2px;">
+            <span style="display:grid;gap:3px;">
+              <span>Warn when birth date is missing</span>
+              <span style="font-size:11px;color:#cdb78f;line-height:1.35;">Enabled by default.</span>
+            </span>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;border-radius:14px;border:1px solid rgba(122,94,64,.6);background:rgba(0,0,0,.18);padding:10px 12px;font-size:13px;color:#f3dfb8;cursor:pointer;">
+            <input id="validation-setting-death" type="checkbox" ${settings.warnMissingDeathDate ? 'checked' : ''} style="width:auto;flex:0 0 auto;margin-top:2px;">
+            <span style="display:grid;gap:3px;">
+              <span>Warn when death date is missing</span>
+              <span style="font-size:11px;color:#cdb78f;line-height:1.35;">Enabled by default.</span>
+            </span>
+          </label>
+        </div>
+      </div>`;
+      const bindToggle = (id, key) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.onchange = () => {
+          state.validationSettings = normalizeValidationSettings({ ...state.validationSettings, [key]: !!input.checked });
+          saveValidationSettings();
+          render();
+        };
+      };
+      bindToggle('validation-setting-show-panel', 'showPanel');
+      bindToggle('validation-setting-birth', 'warnMissingBirthDate');
+      bindToggle('validation-setting-death', 'warnMissingDeathDate');
+    }
+
     function renderOverlayState() {
       els.saveStatus.style.display = state.saveStatus ? 'block' : 'none';
       els.saveStatus.textContent = state.saveStatus;
+      renderValidationSettingsDropdown();
       els.contextMenu.style.display = state.contextMenu ? 'block' : 'none';
       if (state.contextMenu) {
         els.contextMenu.style.left = `${state.contextMenu.clientX + 8}px`;
@@ -2163,6 +2320,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
       renderPasteCk3Modal();
       renderCharacterTraitPickerModal();
     }
+    document.getElementById('validationSettingsBtn').onclick = (e) => { e.stopPropagation(); state.validationSettingsOpen = !state.validationSettingsOpen; render(); };
     document.getElementById('saveJsonBtn').onclick = saveProjectJson;
     document.getElementById('pasteCk3Btn').onclick = () => { state.pasteCk3Open = true; render(); if (els.pasteCk3Textarea) setTimeout(() => els.pasteCk3Textarea.focus(), 0); };
     document.getElementById('exportBtn').onclick = () => { state.exportOpen = true; render(); };
@@ -2204,6 +2362,7 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
     els.stage.onmousedown = (e) => {
       commitActiveEditorField();
       state.contextMenu = null;
+      state.validationSettingsOpen = false;
       if (e.button === 1) {
         e.preventDefault();
         state.panning = true;
@@ -2254,6 +2413,14 @@ education_stewardship_2">${escapeHtml(formatTraitsForTextarea(char.traits))}</te
     });
     els.pasteCk3Modal.onclick = (e) => { if (e.target === els.pasteCk3Modal) { state.pasteCk3Open = false; render(); } };
     els.exportModal.onclick = (e) => { if (e.target === els.exportModal) { state.exportOpen = false; render(); } };
+    if (els.validationSettingsModal) {
+      els.validationSettingsModal.onclick = (e) => { if (e.target === els.validationSettingsModal) { state.validationSettingsOpen = false; render(); } };
+    }
+    const closeValidationSettingsBtn = document.getElementById('closeValidationSettingsBtn');
+    if (closeValidationSettingsBtn) {
+      closeValidationSettingsBtn.onclick = () => { state.validationSettingsOpen = false; render(); };
+    }
+
     render();
   </script>
 </body>
